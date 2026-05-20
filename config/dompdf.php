@@ -1,0 +1,31 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | DomPDF Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'show_warnings'   => false,
+    'orientation'     => 'portrait',
+    'defines'         => [
+        'DOMPDF_UNICODE_ENABLED'         => true,
+        'DOMPDF_FONT_HEIGH_RATIO'        => 1.1,
+        'DOMPDF_ENABLE_FONTSUBSETTING'   => false,
+        'DOMPDF_PDF_BACKEND'             => 'CPDF',
+        'DOMPDF_DEFAULT_MEDIA_TYPE'      => 'print',
+        'DOMPDF_DEFAULT_PAPER_SIZE'      => 'a4',
+        'DOMPDF_DEFAULT_FONT'            => 'DejaVu Sans',
+        'DOMPDF_DPI'                     => 96,
+        'DOMPDF_ENABLE_PHP'              => false,
+        'DOMPDF_ENABLE_JAVASCRIPT'       => true,
+        'DOMPDF_ENABLE_REMOTE'           => false,
+        'DOMPDF_FONT_DIR'                => storage_path('fonts/'),
+        'DOMPDF_FONT_CACHE'              => storage_path('fonts/'),
+        'DOMPDF_TEMP_DIR'                => sys_get_temp_dir(),
+        'DOMPDF_CHROOT'                  => realpath(base_path()),
+    ],
+
+];
