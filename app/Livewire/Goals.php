@@ -68,6 +68,7 @@ class Goals extends Component
     public function editGoal(int $id): void
     {
         $goal = FinancialGoal::findOrFail($id);
+        abort_if($goal->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->name = $goal->name;
         $this->target_amount = (string) (int) $goal->target_amount;

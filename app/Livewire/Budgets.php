@@ -171,6 +171,7 @@ class Budgets extends Component
     public function editBudget(int $id): void
     {
         $budget = Budget::findOrFail($id);
+        abort_if($budget->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->category  = $budget->category;
         $this->amount    = (string) (int) $budget->amount;

@@ -56,6 +56,7 @@ class PaymentMethods extends Component
     public function editPaymentMethod(int $id): void
     {
         $pm = PaymentMethod::findOrFail($id);
+        abort_if($pm->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->name      = $pm->name;
         $this->icon      = $pm->icon;

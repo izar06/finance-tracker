@@ -221,6 +221,12 @@
                     <span class="text-lg flex-shrink-0">💳</span>
                     <span class="link-text">Transaksi</span>
                 </a>
+                <a href="{{ route('bills') }}"
+                   class="sidebar-link {{ request()->routeIs('bills') ? 'active' : '' }}"
+                   title="Tagihan">
+                    <span class="text-lg flex-shrink-0">🧾</span>
+                    <span class="link-text">Tagihan</span>
+                </a>
                 <a href="{{ route('goals') }}"
                    class="sidebar-link {{ request()->routeIs('goals') ? 'active' : '' }}"
                    title="Tujuan Keuangan">

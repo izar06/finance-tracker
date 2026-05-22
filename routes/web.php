@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan', \App\Livewire\Reports::class)->name('reports');
     Route::get('/anggaran', \App\Livewire\Budgets::class)->name('budgets');
     Route::get('/kategori', \App\Livewire\Categories::class)->name('categories');
+    Route::get('/tagihan', \App\Livewire\Bills::class)->name('bills');
 
     // Superadmin only
     Route::middleware(\App\Http\Middleware\SuperAdminMiddleware::class)->group(function () {

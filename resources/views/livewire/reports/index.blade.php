@@ -285,18 +285,31 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: d.months,
                 datasets: [
-                    { label: 'Pemasukan', data: d.incomes, backgroundColor: colors.incomeAlpha, borderColor: colors.income, borderWidth: 2, borderRadius: 6, borderSkipped: false },
-                    { label: 'Pengeluaran', data: d.expenses, backgroundColor: colors.expenseAlpha, borderColor: colors.expense, borderWidth: 2, borderRadius: 6, borderSkipped: false },
+                    { label: 'Pemasukan', data: d.incomes, backgroundColor: colors.incomeAlpha, borderColor: colors.income, borderWidth: 2, borderRadius: 6, borderSkipped: 'bottom' },
+                    { label: 'Pengeluaran', data: d.expenses, backgroundColor: colors.expenseAlpha, borderColor: colors.expense, borderWidth: 2, borderRadius: 6, borderSkipped: 'bottom' },
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { labels: { font: { family: 'Plus Jakarta Sans', size: 11 }, usePointStyle: true, boxWidth: 8 } }, tooltip: tooltipDefaults },
+                plugins: {
+                    legend: { labels: { font: { family: 'Plus Jakarta Sans', size: 11 }, usePointStyle: true, boxWidth: 8 } },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        callbacks: { label: ctx => ' Rp ' + ctx.raw.toLocaleString('id-ID') }
+                    }
+                },
                 scales: {
-                    y: { beginAtZero: true, ticks: { callback: v => 'Rp '+(v/1e6).toFixed(0)+'jt', font: { size: 10 }, maxTicksLimit: 5 }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                    x: { ticks: { font: { size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => 'Rp '+(v/1e6).toFixed(0)+'jt', font: { size: 10 }, maxTicksLimit: 5 },
+                        grid: { color: 'rgba(0,0,0,0.04)' }
+                    },
+                    x: {
+                        ticks: { font: { size: 9 }, maxRotation: 30, autoSkip: false },
+                        grid: { display: false }
+                    }
                 }
             }
         });
@@ -323,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     plugins: { legend: { display: false }, tooltip: tooltipDefaults },
                     scales: {
                         y: { ticks: { callback: v => 'Rp '+(v/1e6).toFixed(0)+'jt', font: { size: 10 }, maxTicksLimit: 5 }, grid: { color: 'rgba(0,0,0,0.04)' } },
-                        x: { ticks: { font: { size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 6 }, grid: { display: false } }
+                        x: { ticks: { font: { size: 9 }, maxRotation: 30, autoSkip: false }, grid: { display: false } }
                     }
                 }
             });

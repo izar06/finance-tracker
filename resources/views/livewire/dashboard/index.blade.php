@@ -353,6 +353,47 @@
         </div>
 
     </div>
+
+    {{-- Tagihan Jatuh Tempo --}}
+    @if($this->upcomingBills->count() > 0)
+    <div class="mt-4 sm:mt-6 bg-amber-50 border border-amber-100 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-amber-100">
+            <div class="flex items-center gap-2">
+                <span>⏰</span>
+                <h3 class="font-bold text-amber-800">Tagihan Segera Jatuh Tempo</h3>
+            </div>
+            <a href="{{ route('bills') }}" class="text-sm font-medium text-amber-600 hover:text-amber-700">
+                Lihat semua →
+            </a>
+        </div>
+        <div class="divide-y divide-amber-100">
+            @foreach($this->upcomingBills as $bill)
+                @php
+                    $days = $bill->days_until_due;
+                    $dueLabel = match(true) {
+                        $days < 0  => abs($days).' hari terlambat',
+                        $days === 0 => 'Hari ini!',
+                        $days === 1 => 'Besok',
+                        default    => $days.' hari lagi',
+                    };
+                    $dueColor = $days <= 0 ? 'text-rose-600' : ($days <= 3 ? 'text-amber-600' : 'text-blue-600');
+                @endphp
+                <div class="flex items-center gap-3 px-4 sm:px-6 py-3">
+                    <span class="text-lg flex-shrink-0">{{ $bill->icon }}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-800 truncate">{{ $bill->name }}</p>
+                        <p class="text-xs text-slate-500">Tgl {{ $bill->due_day }} · {{ $bill->category }}</p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-sm font-bold text-slate-800">Rp {{ number_format($bill->amount, 0, ',', '.') }}</p>
+                        <p class="text-xs font-semibold {{ $dueColor }}">{{ $dueLabel }}</p>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
 </div>
 
 @push('scripts')

@@ -360,6 +360,47 @@
         </div>
 
     </div>
+
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($this->upcomingBills->count() > 0): ?>
+    <div class="mt-4 sm:mt-6 bg-amber-50 border border-amber-100 rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-amber-100">
+            <div class="flex items-center gap-2">
+                <span>⏰</span>
+                <h3 class="font-bold text-amber-800">Tagihan Segera Jatuh Tempo</h3>
+            </div>
+            <a href="<?php echo e(route('bills')); ?>" class="text-sm font-medium text-amber-600 hover:text-amber-700">
+                Lihat semua →
+            </a>
+        </div>
+        <div class="divide-y divide-amber-100">
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $this->upcomingBills; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $bill): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <?php
+                    $days = $bill->days_until_due;
+                    $dueLabel = match(true) {
+                        $days < 0  => abs($days).' hari terlambat',
+                        $days === 0 => 'Hari ini!',
+                        $days === 1 => 'Besok',
+                        default    => $days.' hari lagi',
+                    };
+                    $dueColor = $days <= 0 ? 'text-rose-600' : ($days <= 3 ? 'text-amber-600' : 'text-blue-600');
+                ?>
+                <div class="flex items-center gap-3 px-4 sm:px-6 py-3">
+                    <span class="text-lg flex-shrink-0"><?php echo e($bill->icon); ?></span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-slate-800 truncate"><?php echo e($bill->name); ?></p>
+                        <p class="text-xs text-slate-500">Tgl <?php echo e($bill->due_day); ?> · <?php echo e($bill->category); ?></p>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <p class="text-sm font-bold text-slate-800">Rp <?php echo e(number_format($bill->amount, 0, ',', '.')); ?></p>
+                        <p class="text-xs font-semibold <?php echo e($dueColor); ?>"><?php echo e($dueLabel); ?></p>
+                    </div>
+                </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
 </div>
 
 <?php $__env->startPush('scripts'); ?>

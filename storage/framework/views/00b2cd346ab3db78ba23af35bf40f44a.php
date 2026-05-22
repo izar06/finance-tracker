@@ -222,6 +222,12 @@
                     <span class="text-lg flex-shrink-0">💳</span>
                     <span class="link-text">Transaksi</span>
                 </a>
+                <a href="<?php echo e(route('bills')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('bills') ? 'active' : ''); ?>"
+                   title="Tagihan">
+                    <span class="text-lg flex-shrink-0">🧾</span>
+                    <span class="link-text">Tagihan</span>
+                </a>
                 <a href="<?php echo e(route('goals')); ?>"
                    class="sidebar-link <?php echo e(request()->routeIs('goals') ? 'active' : ''); ?>"
                    title="Tujuan Keuangan">

@@ -7,6 +7,7 @@ use App\Models\Asset;
 use App\Models\FinancialGoal;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Maatwebsite\Excel\Facades\Excel;
 

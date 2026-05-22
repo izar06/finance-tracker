@@ -104,6 +104,7 @@ class Transactions extends Component
     public function editTransaction(int $id): void
     {
         $transaction = Transaction::findOrFail($id);
+        abort_if($transaction->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->type = $transaction->type;
         $this->title = $transaction->title;

@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\Asset;
+use App\Models\Bill;
 use App\Models\Budget;
 use App\Models\FinancialGoal;
 use App\Models\Transaction;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class Dashboard extends Component
@@ -49,6 +51,26 @@ class Dashboard extends Component
     {
         return FinancialGoal::active()->orderBy('deadline')->take(3)->get();
     }
+
+    public function getUpcomingBillsProperty()
+    {
+        return Bill::active()
+            ->get()
+            ->filter(fn($b) => !$b->is_paid_this_month && $b->days_until_due <= 7)
+            ->sortBy('days_until_due')
+            ->take(5)
+            ->values();
+    }
+
+    // public function getUpcomingBillsProperty()
+    // {
+    //     return Bill::active()
+    //         ->get()
+    //         ->filter(fn($b) => !$b->is_paid_this_month && $b->days_until_due <= 7)
+    //         ->sortBy('days_until_due')
+    //         ->take(5)
+    //         ->values();
+    // }
 
     public function getBudgetSummaryProperty()
     {

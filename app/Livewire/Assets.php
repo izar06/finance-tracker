@@ -72,6 +72,7 @@ class Assets extends Component
     public function editAsset(int $id): void
     {
         $asset = Asset::findOrFail($id);
+        abort_if($asset->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->name = $asset->name;
         $this->type = $asset->type;

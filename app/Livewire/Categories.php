@@ -91,6 +91,7 @@ class Categories extends Component
     public function editCategory(int $id): void
     {
         $cat = Category::findOrFail($id);
+        abort_if($cat->user_id !== auth()->id(), 403);
         $this->editingId = $id;
         $this->name      = $cat->name;
         $this->icon      = $cat->icon;
