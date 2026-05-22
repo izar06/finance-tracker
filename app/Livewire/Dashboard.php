@@ -173,7 +173,7 @@ class Dashboard extends Component
 
             $result[] = [
                 'method'              => $method,
-                'icon'                => \App\Models\Transaction::$paymentMethods[$method] ?? '🔖',
+                'icon'                => Transaction::$paymentMethods[$method] ?? '🔖',
                 // All-time
                 'balance'             => $totalIncome - $totalExpense,
                 'all_income'          => $totalIncome,
