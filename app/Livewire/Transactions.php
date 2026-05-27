@@ -25,10 +25,15 @@ class Transactions extends Component
     public string $sortDir = 'desc';
 
     // Form
-    public bool $showForm = false;
-    public bool $showDeleteModal = false;
-    public ?int $editingId = null;
-    public ?int $deletingId = null;
+    public bool $showForm             = false;
+    public bool $showDeleteModal      = false;
+    public bool $showBulkDeleteModal  = false;
+    public ?int $editingId            = null;
+    public ?int $deletingId           = null;
+
+    // Bulk selection
+    public array $selectedIds = [];
+    public bool  $selectAll   = false;
 
     // Fields
     public string $type = 'expense';
@@ -70,22 +75,57 @@ class Transactions extends Component
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->selectedIds = [];
+        $this->selectAll   = false;
     }
 
-    public function updatingFilterType(): void
+    public function updatingFilterType(): void      { $this->resetPage(); $this->selectedIds = []; $this->selectAll = false; $this->filterCategory = ''; }
+    public function updatingFilterCategory(): void  { $this->resetPage(); $this->selectedIds = []; $this->selectAll = false; }
+    public function updatingFilterMonth(): void     { $this->resetPage(); $this->selectedIds = []; $this->selectAll = false; }
+    public function updatingFilterYear(): void      { $this->resetPage(); $this->selectedIds = []; $this->selectAll = false; }
+
+    // ── Bulk Selection ────────────────────────────────────────────────────
+    public function toggleSelectAll(): void
     {
-        $this->resetPage();
-        $this->filterCategory = '';
+        if ($this->selectAll) {
+            $ids = $this->getQuery()->paginate(15)->pluck('id')->map(fn($id) => (string)$id)->toArray();
+            $this->selectedIds = $ids;
+        } else {
+            $this->selectedIds = [];
+        }
     }
 
-    public function updatingFilterMonth(): void
+    public function updatedSelectedIds(): void
     {
-        $this->resetPage();
+        $pageIds = $this->getQuery()->paginate(15)->pluck('id')->map(fn($id) => (string)$id)->toArray();
+        $this->selectAll = !empty($this->selectedIds)
+            && count(array_intersect($this->selectedIds, $pageIds)) === count($pageIds);
     }
 
-    public function updatingFilterYear(): void
+    public function confirmBulkDelete(): void
     {
-        $this->resetPage();
+        if (empty($this->selectedIds)) {
+            $this->dispatch('notify', message: 'Pilih minimal 1 transaksi untuk dihapus.', type: 'error');
+            return;
+        }
+        $this->showBulkDeleteModal = true;
+    }
+
+    public function bulkDelete(): void
+    {
+        $ids = array_map('intval', $this->selectedIds);
+
+        // Security: pastikan semua ID milik user yang login
+        Transaction::whereIn('id', $ids)
+            ->where('user_id', auth()->id())
+            ->delete();
+
+        $count = count($ids);
+        $this->selectedIds        = [];
+        $this->selectAll          = false;
+        $this->showBulkDeleteModal = false;
+
+        $this->dispatch('notify', message: "{$count} transaksi berhasil dihapus.", type: 'success');
     }
 
     public function updatedType(): void

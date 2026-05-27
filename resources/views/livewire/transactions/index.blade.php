@@ -22,6 +22,25 @@
         </div>
     </div>
 
+    {{-- Bulk Action Toolbar --}}
+    @if(count($selectedIds) > 0)
+        <div class="flex items-center justify-between gap-3 bg-primary-50 border border-primary-200 rounded-2xl px-4 py-3 mb-4">
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-semibold text-primary-700">
+                    {{ count($selectedIds) }} transaksi dipilih
+                </span>
+                <button wire:click="$set('selectedIds', []); $set('selectAll', false)"
+                        class="text-xs text-primary-500 hover:text-primary-700 underline">
+                    Batal pilih
+                </button>
+            </div>
+            <button wire:click="confirmBulkDelete"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 rounded-xl transition-colors">
+                🗑️ Hapus {{ count($selectedIds) }} Transaksi
+            </button>
+        </div>
+    @endif
+
     {{-- Filters --}}
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -66,9 +85,14 @@
         {{-- Mobile Card View (hidden on md+) --}}
         <div class="md:hidden divide-y divide-slate-100">
             @forelse($transactions as $tx)
-                <div class="p-4 hover:bg-slate-50 transition-colors">
+                <div class="p-4 hover:bg-slate-50 transition-colors {{ in_array((string)$tx->id, $selectedIds) ? 'bg-primary-50' : '' }}">
                     <div class="flex items-start justify-between gap-3 mb-2">
                         <div class="flex items-center gap-3 min-w-0">
+                            {{-- Checkbox --}}
+                            <input type="checkbox"
+                                   wire:model.live="selectedIds"
+                                   value="{{ $tx->id }}"
+                                   class="w-4 h-4 rounded border-slate-300 text-primary-500 flex-shrink-0 cursor-pointer">
                             <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm flex-shrink-0
                                         {{ $tx->type === 'income' ? 'bg-emerald-50' : 'bg-rose-50' }}">
                                 {{ $tx->type === 'income' ? '📥' : '📤' }}
@@ -115,6 +139,13 @@
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 border-b border-slate-100">
                     <tr>
+                        {{-- Select All checkbox --}}
+                        <th class="px-4 py-3.5 w-10">
+                            <input type="checkbox"
+                                   wire:model.live="selectAll"
+                                   wire:click="toggleSelectAll"
+                                   class="w-4 h-4 rounded border-slate-300 text-primary-500 cursor-pointer">
+                        </th>
                         <th class="text-left px-5 py-3.5 font-semibold text-slate-600">
                             <button wire:click="sortColumn('date')" class="flex items-center gap-1 hover:text-primary-600">
                                 Tanggal
@@ -136,7 +167,14 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse($transactions as $tx)
-                        <tr class="hover:bg-slate-50 transition-colors">
+                        <tr class="hover:bg-slate-50 transition-colors {{ in_array((string)$tx->id, $selectedIds) ? 'bg-primary-50' : '' }}">
+                            {{-- Row checkbox --}}
+                            <td class="px-4 py-3.5">
+                                <input type="checkbox"
+                                       wire:model.live="selectedIds"
+                                       value="{{ $tx->id }}"
+                                       class="w-4 h-4 rounded border-slate-300 text-primary-500 cursor-pointer">
+                            </td>
                             <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ $tx->date->translatedFormat('d M Y') }}</td>
                             <td class="px-5 py-3.5">
                                 <p class="font-medium text-slate-800">{{ $tx->title }}</p>
@@ -314,6 +352,28 @@
                             class="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200">Batal</button>
                     <button wire:click="deleteTransaction"
                             class="flex-1 py-2.5 text-sm font-semibold text-white bg-rose-500 rounded-xl hover:bg-rose-600">Hapus</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- Bulk Delete Modal --}}
+    @if($showBulkDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+                <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-2xl">🗑️</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Hapus {{ count($selectedIds) }} Transaksi?</h3>
+                <p class="text-sm text-slate-500 mb-6">Semua transaksi yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.</p>
+                <div class="flex gap-3">
+                    <button wire:click="$set('showBulkDeleteModal', false)"
+                            class="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200">Batal</button>
+                    <button wire:click="bulkDelete" wire:loading.attr="disabled"
+                            class="flex-1 py-2.5 text-sm font-semibold text-white bg-rose-500 rounded-xl hover:bg-rose-600 disabled:opacity-60">
+                        <span wire:loading.remove wire:target="bulkDelete">Ya, Hapus Semua</span>
+                        <span wire:loading wire:target="bulkDelete">Menghapus...</span>
+                    </button>
                 </div>
             </div>
         </div>

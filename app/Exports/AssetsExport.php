@@ -12,21 +12,23 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AssetsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
 {
+    private int $rowNumber = 0;
+
     public function collection()
     {
-        // Global scope on Asset already filters by auth user
         return Asset::orderBy('type')->get();
     }
 
     public function headings(): array
     {
-        return ['ID','Nama','Tipe','Harga Beli (Rp)','Nilai Sekarang (Rp)','Untung/Rugi (Rp)','Tanggal Beli','Deskripsi'];
+        return ['No.','Nama','Tipe','Harga Beli (Rp)','Nilai Sekarang (Rp)','Untung/Rugi (Rp)','Tanggal Beli','Deskripsi'];
     }
 
     public function map($row): array
     {
+        $this->rowNumber++;
         return [
-            $row->id,
+            $this->rowNumber,
             $row->name,
             Asset::$types[$row->type] ?? $row->type,
             number_format($row->purchase_price, 0, ',', '.'),

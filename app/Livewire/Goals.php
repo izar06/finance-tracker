@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\FinancialGoal;
+use App\Models\Transaction;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -67,6 +68,7 @@ class Goals extends Component
 
     public function editGoal(int $id): void
     {
+        
         $goal = FinancialGoal::findOrFail($id);
         abort_if($goal->user_id !== auth()->id(), 403);
         $this->editingId = $id;
@@ -123,14 +125,27 @@ class Goals extends Component
         ]);
 
         $goal = FinancialGoal::findOrFail($this->savingGoalId);
-        $newAmount = $goal->current_amount + (float) str_replace(['.', ','], ['', '.'], $this->savingAmount);
+        abort_if($goal->user_id !== auth()->id(), 403);
+
+        $amount    = (float) str_replace(['.', ','], ['', '.'], $this->savingAmount);
+        $newAmount = $goal->current_amount + $amount;
         $goal->update(['current_amount' => $newAmount]);
+
+        // Otomatis catat sebagai transaksi pengeluaran
+        Transaction::create([
+            'type'     => 'expense',
+            'title'    => 'Tabungan: ' . $goal->name,
+            'amount'   => $amount,
+            'category' => 'Tabungan',
+            'date'     => now()->format('Y-m-d'),
+            'notes'    => 'Setoran tujuan keuangan: ' . $goal->name,
+        ]);
 
         if ($newAmount >= $goal->target_amount) {
             $goal->update(['status' => 'completed']);
             $this->dispatch('notify', message: '🎉 Selamat! Tujuan keuangan tercapai!', type: 'success');
         } else {
-            $this->dispatch('notify', message: 'Tabungan berhasil ditambahkan.', type: 'success');
+            $this->dispatch('notify', message: 'Tabungan berhasil ditambahkan & dicatat sebagai transaksi.', type: 'success');
         }
 
         $this->showAddSavingModal = false;

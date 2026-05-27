@@ -36,6 +36,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width:5%">No.</th>
                 <th>Nama Aset</th>
                 <th>Tipe</th>
                 <th style="text-align:right;">Harga Beli</th>
@@ -47,6 +48,7 @@
         <tbody>
             @foreach($assets as $asset)
                 <tr>
+                    <td style="color:#94a3b8">{{ $loop->iteration }}</td>
                     <td>
                         <strong>{{ $asset->name }}</strong>
                         @if($asset->description)

@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class TransactionsExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     private $query;
+    private int $rowNumber = 0;
 
     public function __construct($query)
     {
@@ -27,11 +28,12 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
     public function headings(): array
     {
         return [
-            'ID',
+            'No.',
             'Tipe',
             'Judul',
             'Jumlah (Rp)',
             'Kategori',
+            'Metode Pembayaran',
             'Tanggal',
             'Catatan',
         ];
@@ -39,12 +41,14 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
 
     public function map($row): array
     {
+        $this->rowNumber++;
         return [
-            $row->id,
+            $this->rowNumber,
             $row->type === 'income' ? 'Pemasukan' : 'Pengeluaran',
             $row->title,
             number_format($row->amount, 0, ',', '.'),
             $row->category,
+            $row->payment_method ?? '-',
             $row->date->format('d/m/Y'),
             $row->notes ?? '-',
         ];

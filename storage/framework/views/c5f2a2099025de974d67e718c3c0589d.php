@@ -37,34 +37,35 @@
 <body>
     <div class="header">
         <h1>Laporan Transaksi Keuangan</h1>
-        <p>Dicetak pada: {{ now()->translatedFormat('d F Y, H:i') }}</p>
+        <p>Dicetak pada: <?php echo e(now()->translatedFormat('d F Y, H:i')); ?></p>
     </div>
 
-    {{-- Summary Cards pakai table agar DomPDF support --}}
+    
     <table class="summary-table">
         <tr>
             <td class="summary-cell">
                 <p class="label">Total Pemasukan</p>
-                <p class="value income">Rp {{ number_format($totalIncome, 0, ',', '.') }}</p>
+                <p class="value income">Rp <?php echo e(number_format($totalIncome, 0, ',', '.')); ?></p>
             </td>
             <td class="summary-cell">
                 <p class="label">Total Pengeluaran</p>
-                <p class="value expense">Rp {{ number_format($totalExpense, 0, ',', '.') }}</p>
+                <p class="value expense">Rp <?php echo e(number_format($totalExpense, 0, ',', '.')); ?></p>
             </td>
             <td class="summary-cell">
                 <p class="label">Saldo Bersih</p>
-                <p class="value {{ ($totalIncome - $totalExpense) >= 0 ? 'income' : 'expense' }}">
-                    Rp {{ number_format(abs($totalIncome - $totalExpense), 0, ',', '.') }}
+                <p class="value <?php echo e(($totalIncome - $totalExpense) >= 0 ? 'income' : 'expense'); ?>">
+                    Rp <?php echo e(number_format(abs($totalIncome - $totalExpense), 0, ',', '.')); ?>
+
                 </p>
             </td>
             <td class="summary-cell">
                 <p class="label">Jumlah Transaksi</p>
-                <p class="value" style="color:#3b82f6;">{{ $transactions->count() }} transaksi</p>
+                <p class="value" style="color:#3b82f6;"><?php echo e($transactions->count()); ?> transaksi</p>
             </td>
         </tr>
     </table>
 
-    {{-- Main Table --}}
+    
     <div class="main-wrap">
         <table class="main-table">
             <thead>
@@ -79,23 +80,25 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($transactions as $tx)
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = $transactions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tx): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <tr>
-                        <td style="color:#94a3b8">{{ $loop->iteration }}</td>
-                        <td>{{ $tx->date->format('d/m/Y') }}</td>
-                        <td>{{ $tx->title }}</td>
-                        <td>{{ $tx->category }}</td>
-                        <td>{{ $tx->payment_method ?? '-' }}</td>
+                        <td style="color:#94a3b8"><?php echo e($loop->iteration); ?></td>
+                        <td><?php echo e($tx->date->format('d/m/Y')); ?></td>
+                        <td><?php echo e($tx->title); ?></td>
+                        <td><?php echo e($tx->category); ?></td>
+                        <td><?php echo e($tx->payment_method ?? '-'); ?></td>
                         <td>
-                            <span class="badge {{ $tx->type === 'income' ? 'badge-income' : 'badge-expense' }}">
-                                {{ $tx->type === 'income' ? 'Pemasukan' : 'Pengeluaran' }}
+                            <span class="badge <?php echo e($tx->type === 'income' ? 'badge-income' : 'badge-expense'); ?>">
+                                <?php echo e($tx->type === 'income' ? 'Pemasukan' : 'Pengeluaran'); ?>
+
                             </span>
                         </td>
-                        <td style="text-align:right; font-weight:bold; color: {{ $tx->type === 'income' ? '#16a34a' : '#dc2626' }}">
-                            {{ $tx->type === 'income' ? '+' : '-' }} {{ number_format($tx->amount, 0, ',', '.') }}
+                        <td style="text-align:right; font-weight:bold; color: <?php echo e($tx->type === 'income' ? '#16a34a' : '#dc2626'); ?>">
+                            <?php echo e($tx->type === 'income' ? '+' : '-'); ?> <?php echo e(number_format($tx->amount, 0, ',', '.')); ?>
+
                         </td>
                     </tr>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -104,4 +107,4 @@
         Finance Tracker — Laporan dibuat otomatis oleh sistem
     </div>
 </body>
-</html>
+</html><?php /**PATH /Users/izarhairulanam/Downloads/finance-tracker-responsive 7/resources/views/exports/transactions-pdf.blade.php ENDPATH**/ ?>
