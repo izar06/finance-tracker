@@ -3,17 +3,19 @@
 namespace App\Livewire;
 
 use App\Exports\TransactionsExport;
+use App\Imports\TransactionsImport;
 use App\Models\Category;
 use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 
 class Transactions extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     // Filters
     public string $search              = '';
@@ -30,10 +32,22 @@ class Transactions extends Component
     public bool $showForm              = false;
     public bool $showDeleteModal       = false;
     public bool $showRecurringDetail   = false;
+    public bool $showBulkDeleteModal   = false;
     public ?int $editingId             = null;
     public ?int $deletingId            = null;
     public ?int $recurringDetailId     = null;
     public string $deleteScope         = 'single'; // single | all
+
+    // Bulk Delete
+    public array $selectedIds          = [];
+    public bool $selectAll             = false;
+
+    // Import
+    public bool $showImportModal       = false;
+    public $importFile                 = null;
+    public ?int $importedCount         = null;
+    public ?int $skippedCount          = null;
+    public array $importErrors         = [];
 
     // Fields — transaksi utama
     public string $type           = 'expense';
@@ -198,6 +212,38 @@ class Transactions extends Component
         $this->deleteScope     = 'single';
     }
 
+    // ── Bulk Delete ─────────────────────────────────────────────────────────
+
+    public function updatedSelectAll(bool $value): void
+    {
+        if ($value) {
+            $this->selectedIds = $this->getQuery()->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        } else {
+            $this->selectedIds = [];
+        }
+    }
+
+    public function confirmBulkDelete(): void
+    {
+        if (count($this->selectedIds) > 0) {
+            $this->showBulkDeleteModal = true;
+        }
+    }
+
+    public function bulkDeleteTransactions(): void
+    {
+        Transaction::whereIn('id', $this->selectedIds)
+            ->where('user_id', auth()->id())
+            ->delete();
+
+        $count = count($this->selectedIds);
+        $this->selectedIds = [];
+        $this->selectAll   = false;
+        $this->showBulkDeleteModal = false;
+
+        $this->dispatch('notify', message: "{$count} transaksi berhasil dihapus.", type: 'success');
+    }
+
     // ── Recurring detail modal ───────────────────────────────────────────────
 
     public function showRecurringInfo(int $id): void
@@ -308,12 +354,84 @@ class Transactions extends Component
         );
     }
 
+    // ── Import ──────────────────────────────────────────────────────────────
+
+    public function openImportModal(): void
+    {
+        $this->importFile     = null;
+        $this->importedCount  = null;
+        $this->skippedCount   = null;
+        $this->importErrors   = [];
+        $this->showImportModal = true;
+    }
+
+    public function importTransactions(): void
+    {
+        $this->validate(['importFile' => 'required|file|mimes:xlsx,xls,csv|max:2048']);
+
+        $import = new TransactionsImport();
+        Excel::import($import, $this->importFile->getRealPath());
+
+        $this->importedCount = $import->imported;
+        $this->skippedCount  = $import->skipped;
+        $this->importErrors  = array_slice($import->errors, 0, 10);
+        $this->importFile    = null;
+
+        if ($import->imported > 0) {
+            $this->dispatch('notify', message: "{$import->imported} transaksi berhasil diimport.", type: 'success');
+        }
+    }
+
+    public function closeImportModal(): void
+    {
+        $this->showImportModal = false;
+        $this->importFile      = null;
+        $this->importedCount   = null;
+        $this->skippedCount    = null;
+        $this->importErrors    = [];
+    }
+
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $headers = ['Content-Type' => 'text/csv; charset=UTF-8'];
+        return response()->streamDownload(function () {
+            $out = fopen('php://output', 'w');
+            fputs($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['tipe', 'judul', 'jumlah', 'kategori', 'tanggal', 'metode_pembayaran', 'catatan']);
+            fputcsv($out, ['income',  'Gaji Bulanan', '5000000', 'Gaji',              date('Y-m-d'), 'Transfer Bank', 'Contoh pemasukan']);
+            fputcsv($out, ['expense', 'Makan Siang',  '50000',   'Makanan & Minuman', date('Y-m-d'), 'Tunai',         'Contoh pengeluaran']);
+            fclose($out);
+        }, 'template-import-transaksi.csv', $headers);
+    }
+
+    public function getFilteredSummaryProperty(): array
+    {
+        $result = $this->getQuery()
+            ->selectRaw("
+                SUM(CASE WHEN type = 'income'  THEN amount ELSE 0 END) as total_income,
+                SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense,
+                COUNT(*) as total_count
+            ")
+            ->first();
+
+        $income  = (float) ($result->total_income  ?? 0);
+        $expense = (float) ($result->total_expense ?? 0);
+
+        return [
+            'income'  => $income,
+            'expense' => $expense,
+            'balance' => $income - $expense,
+            'count'   => (int) ($result->total_count ?? 0),
+        ];
+    }
+
     public function render()
     {
         $transactions = $this->getQuery()->paginate(15);
 
         return view('livewire.transactions.index', [
-            'transactions' => $transactions,
+            'transactions'    => $transactions,
+            'filteredSummary' => $this->filteredSummary,
         ])->layout('layouts.app', ['title' => 'Transaksi']);
     }
 }
