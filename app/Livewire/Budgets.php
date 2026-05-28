@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Livewire\Component;
 
 class Budgets extends Component
@@ -14,20 +15,29 @@ class Budgets extends Component
     public int $year;
 
     // Form
-    public bool $showForm       = false;
-    public bool $showDeleteModal = false;
-    public ?int $editingId      = null;
-    public ?int $deletingId     = null;
+    public bool $showForm          = false;
+    public bool $showDeleteModal   = false;
+    public bool $showCopyModal     = false;
+    public ?int $editingId         = null;
+    public ?int $deletingId        = null;
 
     // Fields
     public string $category = '';
     public string $amount   = '';
     public string $notes    = '';
 
+    // Copy modal
+    public int    $copyFromMonth;
+    public int    $copyFromYear;
+    public bool   $copyOverwrite  = false;
+    public array  $copyPreview    = [];
+
     public function mount(): void
     {
-        $this->month = now()->month;
-        $this->year  = now()->year;
+        $this->month         = now()->month;
+        $this->year          = now()->year;
+        $this->copyFromMonth = now()->subMonth()->month;
+        $this->copyFromYear  = now()->subMonth()->year;
     }
 
     protected function rules(): array
@@ -54,7 +64,8 @@ class Budgets extends Component
         'notes'    => 'Catatan',
     ];
 
-    // ── Computed: daftar budget bulan/tahun terpilih ─────────────────────
+    // ── Computed ──────────────────────────────────────────────────────────
+
     public function getBudgetsProperty()
     {
         return Budget::where('month', $this->month)
@@ -63,7 +74,6 @@ class Budgets extends Component
             ->get();
     }
 
-    // ── Computed: kategori yang belum punya budget di bulan ini ──────────
     public function getAvailableCategoriesProperty(): array
     {
         $used = Budget::where('month', $this->month)
@@ -80,7 +90,6 @@ class Budgets extends Component
         );
     }
 
-    // ── Computed: ringkasan bulan ini ─────────────────────────────────────
     public function getSummaryProperty(): array
     {
         $budgets = $this->budgets;
@@ -94,7 +103,6 @@ class Budgets extends Component
         return compact('totalBudget', 'totalSpent', 'onTrack', 'warning', 'overBudget');
     }
 
-    // ── Computed: total pengeluaran aktual bulan ini (termasuk yg tidak ada budgetnya) ──
     public function getTotalExpenseProperty(): float
     {
         return (float) Transaction::expense()
@@ -103,7 +111,6 @@ class Budgets extends Component
             ->sum('amount');
     }
 
-    // ── Computed: pengeluaran kategori TANPA budget ───────────────────────
     public function getUnbudgetedExpensesProperty()
     {
         $budgetedCategories = Budget::where('month', $this->month)
@@ -121,7 +128,6 @@ class Budgets extends Component
             ->get();
     }
 
-    // ── Available years for filter ────────────────────────────────────────
     public function getAvailableYearsProperty(): array
     {
         $years = [];
@@ -131,28 +137,29 @@ class Budgets extends Component
         return $years;
     }
 
+    // ── Computed: label bulan sumber copy ────────────────────────────────
+
+    public function getCopySourceLabelProperty(): string
+    {
+        return Carbon::create($this->copyFromYear, $this->copyFromMonth)->translatedFormat('F Y');
+    }
+
     // ── Month navigation ──────────────────────────────────────────────────
+
     public function prevMonth(): void
     {
-        if ($this->month === 1) {
-            $this->month = 12;
-            $this->year--;
-        } else {
-            $this->month--;
-        }
+        if ($this->month === 1) { $this->month = 12; $this->year--; }
+        else { $this->month--; }
     }
 
     public function nextMonth(): void
     {
-        if ($this->month === 12) {
-            $this->month = 1;
-            $this->year++;
-        } else {
-            $this->month++;
-        }
+        if ($this->month === 12) { $this->month = 1; $this->year++; }
+        else { $this->month++; }
     }
 
     // ── Form CRUD ─────────────────────────────────────────────────────────
+
     public function openFormWithCategory(string $category): void
     {
         $this->resetForm();
@@ -231,6 +238,116 @@ class Budgets extends Component
         $this->notes     = '';
         $this->resetValidation();
     }
+
+    // ── Salin Anggaran ────────────────────────────────────────────────────
+
+    public function openCopyModal(): void
+    {
+        // Default: salin dari bulan sebelum bulan yang sedang dilihat
+        $prev = Carbon::create($this->year, $this->month)->subMonth();
+        $this->copyFromMonth = $prev->month;
+        $this->copyFromYear  = $prev->year;
+        $this->copyOverwrite = false;
+        $this->loadCopyPreview();
+        $this->showCopyModal = true;
+    }
+
+    // Dipanggil setiap kali bulan/tahun sumber berubah
+    public function updatedCopyFromMonth(): void { $this->loadCopyPreview(); }
+    public function updatedCopyFromYear(): void  { $this->loadCopyPreview(); }
+    public function updatedCopyOverwrite(): void { $this->loadCopyPreview(); }
+
+    private function loadCopyPreview(): void
+    {
+        $source = Budget::where('month', $this->copyFromMonth)
+            ->where('year', $this->copyFromYear)
+            ->orderBy('category')
+            ->get();
+
+        $existing = Budget::where('month', $this->month)
+            ->where('year', $this->year)
+            ->pluck('amount', 'category');
+
+        $this->copyPreview = $source->map(function ($b) use ($existing) {
+            $alreadyExists = $existing->has($b->category);
+            return [
+                'category'      => $b->category,
+                'amount'        => (float) $b->amount,
+                'already_exists'=> $alreadyExists,
+                'will_copy'     => !$alreadyExists || $this->copyOverwrite,
+            ];
+        })->toArray();
+    }
+
+    public function copyBudgets(): void
+    {
+        if (empty($this->copyPreview)) {
+            $this->dispatch('notify', message: 'Tidak ada anggaran untuk disalin.', type: 'error');
+            return;
+        }
+
+        $source = Budget::where('month', $this->copyFromMonth)
+            ->where('year', $this->copyFromYear)
+            ->get();
+
+        if ($source->isEmpty()) {
+            $this->dispatch('notify', message: 'Tidak ada anggaran di bulan sumber.', type: 'error');
+            return;
+        }
+
+        $copied   = 0;
+        $skipped  = 0;
+        $updated  = 0;
+
+        foreach ($source as $budget) {
+            $existing = Budget::where('month', $this->month)
+                ->where('year', $this->year)
+                ->where('category', $budget->category)
+                ->first();
+
+            if ($existing) {
+                if ($this->copyOverwrite) {
+                    $existing->update([
+                        'amount' => $budget->amount,
+                        'notes'  => $budget->notes,
+                    ]);
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+            } else {
+                Budget::create([
+                    'category' => $budget->category,
+                    'amount'   => $budget->amount,
+                    'month'    => $this->month,
+                    'year'     => $this->year,
+                    'notes'    => $budget->notes,
+                ]);
+                $copied++;
+            }
+        }
+
+        $this->showCopyModal = false;
+        $this->copyPreview   = [];
+
+        $parts = [];
+        if ($copied  > 0) $parts[] = "{$copied} anggaran disalin";
+        if ($updated > 0) $parts[] = "{$updated} diperbarui";
+        if ($skipped > 0) $parts[] = "{$skipped} dilewati";
+
+        $this->dispatch('notify',
+            message: implode(', ', $parts) . '.',
+            type: 'success'
+        );
+    }
+
+    public function closeCopyModal(): void
+    {
+        $this->showCopyModal = false;
+        $this->copyPreview   = [];
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────
 
     public function render()
     {
