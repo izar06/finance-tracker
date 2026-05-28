@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'Finance Tracker' }} — Finance Tracker</title>
-    <link rel="icon" href="{{ asset('assets/icon.png') }}">
-    {{-- Anti-FOUC: apply dark class before render --}}
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
+    <title><?php echo e($title ?? 'Finance Tracker'); ?> — Finance Tracker</title>
+    <link rel="icon" href="<?php echo e(asset('assets/icon.png')); ?>">
+    
     <script>if(localStorage.getItem('darkMode')==='true')document.documentElement.classList.add('dark');</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +36,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
-    @livewireStyles
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::styles(); ?>
+
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -295,7 +296,7 @@
          wire:loading.delay
          wire:loading.remove.style="width:0;opacity:0"></div>
 
-    {{-- Mobile overlay --}}
+    
     <div x-show="sidebarOpen" x-cloak @click="sidebarOpen=false"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
@@ -307,13 +308,13 @@
 
     <div class="flex h-full min-h-screen">
 
-        {{-- ═══ SIDEBAR ═══ --}}
+        
         <aside id="sidebar"
                class="fixed inset-y-0 left-0 z-30 bg-white border-r border-slate-200 flex flex-col
                       lg:translate-x-0 lg:static lg:z-auto transition-all duration-300"
                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
 
-            {{-- Brand --}}
+            
             <div class="flex items-center gap-3 px-4 py-5 border-b border-slate-100 relative">
                 <div class="brand-logo w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-md shadow-primary-500/30 flex-shrink-0">
                     <span class="text-white text-xl">💰</span>
@@ -322,7 +323,7 @@
                     <p class="font-bold text-slate-800 text-sm leading-tight whitespace-nowrap">Finance Tracker</p>
                     <p class="text-xs text-slate-400 whitespace-nowrap">Kelola keuanganmu</p>
                 </div>
-                {{-- Toggle button (desktop) --}}
+                
                 <button @click="toggleSidebar()"
                         class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7
                                bg-white border border-slate-200 rounded-full shadow-sm
@@ -338,88 +339,88 @@
                 </button>
             </div>
 
-            {{-- Nav --}}
+            
             <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
                 <p class="sidebar-section-label text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-3 mt-1">Menu Utama</p>
 
-                <a href="{{ route('dashboard') }}"
-                   class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                <a href="<?php echo e(route('dashboard')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>"
                    title="Dashboard">
                     <span class="text-lg flex-shrink-0">📊</span>
                     <span class="link-text">Dashboard</span>
                 </a>
-                <a href="{{ route('transactions') }}"
-                   class="sidebar-link {{ request()->routeIs('transactions') ? 'active' : '' }}"
+                <a href="<?php echo e(route('transactions')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('transactions') ? 'active' : ''); ?>"
                    title="Transaksi">
                     <span class="text-lg flex-shrink-0">💳</span>
                     <span class="link-text">Transaksi</span>
                 </a>
-                <a href="{{ route('bills') }}"
-                   class="sidebar-link {{ request()->routeIs('bills') ? 'active' : '' }}"
+                <a href="<?php echo e(route('bills')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('bills') ? 'active' : ''); ?>"
                    title="Tagihan">
                     <span class="text-lg flex-shrink-0">🧾</span>
                     <span class="link-text">Tagihan</span>
                 </a>
-                <a href="{{ route('goals') }}"
-                   class="sidebar-link {{ request()->routeIs('goals') ? 'active' : '' }}"
+                <a href="<?php echo e(route('goals')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('goals') ? 'active' : ''); ?>"
                    title="Tujuan Keuangan">
                     <span class="text-lg flex-shrink-0">🎯</span>
                     <span class="link-text">Tujuan Keuangan</span>
                 </a>
-                <a href="{{ route('assets') }}"
-                   class="sidebar-link {{ request()->routeIs('assets') ? 'active' : '' }}"
+                <a href="<?php echo e(route('assets')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('assets') ? 'active' : ''); ?>"
                    title="Aset">
                     <span class="text-lg flex-shrink-0">🏦</span>
                     <span class="link-text">Aset</span>
                 </a>
-                <a href="{{ route('budgets') }}"
-                   class="sidebar-link {{ request()->routeIs('budgets') ? 'active' : '' }}"
+                <a href="<?php echo e(route('budgets')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('budgets') ? 'active' : ''); ?>"
                    title="Anggaran">
                     <span class="text-lg flex-shrink-0">💰</span>
                     <span class="link-text">Anggaran</span>
                 </a>
-                <a href="{{ route('categories') }}"
-                   class="sidebar-link {{ request()->routeIs('categories') ? 'active' : '' }}"
+                <a href="<?php echo e(route('categories')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('categories') ? 'active' : ''); ?>"
                    title="Kategori">
                     <span class="text-lg flex-shrink-0">🏷️</span>
                     <span class="link-text">Kategori</span>
                 </a>
                 <p class="sidebar-section-label text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mt-5 mb-3">Analisis</p>
 
-                <a href="{{ route('reports') }}"
-                   class="sidebar-link {{ request()->routeIs('reports') ? 'active' : '' }}"
+                <a href="<?php echo e(route('reports')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('reports') ? 'active' : ''); ?>"
                    title="Laporan">
                     <span class="text-lg flex-shrink-0">📈</span>
                     <span class="link-text">Laporan</span>
                 </a>
 
-                @if(auth()->user()?->isSuperAdmin())
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(auth()->user()?->isSuperAdmin()): ?>
                 <p class="sidebar-section-label text-xs font-semibold text-amber-500 uppercase tracking-wider px-3 mt-5 mb-3">Admin</p>
-                <a href="{{ route('superadmin') }}"
-                   class="sidebar-link {{ request()->routeIs('superadmin') ? 'active' : '' }}"
+                <a href="<?php echo e(route('superadmin')); ?>"
+                   class="sidebar-link <?php echo e(request()->routeIs('superadmin') ? 'active' : ''); ?>"
                    title="Manajemen User"
-                   style="{{ request()->routeIs('superadmin') ? '' : 'color:#b45309' }}">
+                   style="<?php echo e(request()->routeIs('superadmin') ? '' : 'color:#b45309'); ?>">
                     <span class="text-lg flex-shrink-0">🛡️</span>
                     <span class="link-text">Manajemen User</span>
                 </a>
-                @endif
+                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
             </nav>
 
-            {{-- Date box --}}
+            
             <div class="px-3 py-4 border-t border-slate-100 flex-shrink-0">
                 <div class="date-box bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-3 text-center">
-                    <p class="text-xs text-primary-400">{{ now()->translatedFormat('l') }}</p>
-                    <p class="text-sm font-bold text-primary-700">{{ now()->translatedFormat('d F Y') }}</p>
+                    <p class="text-xs text-primary-400"><?php echo e(now()->translatedFormat('l')); ?></p>
+                    <p class="text-sm font-bold text-primary-700"><?php echo e(now()->translatedFormat('d F Y')); ?></p>
                 </div>
             </div>
         </aside>
 
-        {{-- ═══ MAIN ═══ --}}
+        
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
             <header class="bg-white border-b border-slate-200 px-4 lg:px-8 h-16 flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
                 <div class="flex items-center gap-4">
-                    {{-- Mobile hamburger --}}
+                    
                     <button @click="sidebarOpen=!sidebarOpen"
                             class="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,7 +428,7 @@
                         </svg>
                     </button>
                     <div>
-                        <h1 class="text-base font-bold text-slate-800 leading-tight">{{ $title ?? 'Dashboard' }}</h1>
+                        <h1 class="text-base font-bold text-slate-800 leading-tight"><?php echo e($title ?? 'Dashboard'); ?></h1>
                         <p class="text-xs text-slate-400 leading-tight hidden sm:block">Finance Tracker</p>
                     </div>
                 </div>
@@ -441,31 +442,51 @@
                         <span class="hidden sm:inline text-xs">Memuat...</span>
                     </div>
 
-                    {{-- Dark Mode Toggle --}}
+                    
                     <button id="dark-toggle" @click="toggleDark()"
                             class="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                             :title="darkMode ? 'Mode Terang' : 'Mode Gelap'">
-                        {{-- Sun icon (shown in dark mode) --}}
+                        
                         <svg x-show="darkMode" class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
                         </svg>
-                        {{-- Moon icon (shown in light mode) --}}
+                        
                         <svg x-show="!darkMode" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                             <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"/>
                         </svg>
                     </button>
 
-                    {{-- Bill Reminder Bell --}}
-                    @livewire('bill-reminder')
+                    
+                    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('bill-reminder');
 
-                    {{-- User Dropdown --}}
+$__key = null;
+
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-3908560687-0', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+unset($__name);
+unset($__params);
+unset($__split);
+if (isset($__slots)) unset($__slots);
+?>
+
+                    
                     <div class="relative" x-data="{ open: false }" @click.outside="open = false">
                         <button @click="open = !open"
                                 class="flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-xl px-3 py-2 hover:bg-primary-100 transition-colors">
                             <div class="w-6 h-6 bg-primary-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <span class="text-white text-xs font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                                <span class="text-white text-xs font-bold"><?php echo e(strtoupper(substr(auth()->user()->name ?? 'U', 0, 1))); ?></span>
                             </div>
-                            <span class="text-sm font-medium text-primary-700 hidden sm:inline">{{ auth()->user()->name ?? 'Pengguna' }}</span>
+                            <span class="text-sm font-medium text-primary-700 hidden sm:inline"><?php echo e(auth()->user()->name ?? 'Pengguna'); ?></span>
                             <svg class="w-4 h-4 text-primary-400 hidden sm:block transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
@@ -480,11 +501,11 @@
                              x-transition:leave-end="opacity-0 scale-95"
                              class="user-dropdown-menu">
                             <div class="px-4 py-3 bg-primary-50 border-b border-primary-100">
-                                <p class="text-xs font-semibold text-primary-700">{{ auth()->user()->name ?? 'Pengguna' }}</p>
-                                <p class="text-xs text-primary-400 truncate">{{ auth()->user()->email ?? '' }}</p>
+                                <p class="text-xs font-semibold text-primary-700"><?php echo e(auth()->user()->name ?? 'Pengguna'); ?></p>
+                                <p class="text-xs text-primary-400 truncate"><?php echo e(auth()->user()->email ?? ''); ?></p>
                             </div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
+                            <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                <?php echo csrf_field(); ?>
                                 <button type="submit" class="logout-btn">
                                     <span>🚪</span> Keluar
                                 </button>
@@ -494,8 +515,8 @@
                 </div>
             </header>
 
-            {{-- Flash messages --}}
-            @if(session('success'))
+            
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session('success')): ?>
                 <div x-data="{show:true}" x-show="show" x-init="setTimeout(()=>show=false,4500)"
                      x-transition:leave="transition ease-in duration-300"
                      x-transition:leave-start="opacity-100 translate-y-0"
@@ -503,36 +524,59 @@
                      class="mx-3 sm:mx-4 lg:mx-8 mt-3 sm:mt-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <span class="text-lg">✅</span>
-                        <p class="text-sm font-medium">{{ session('success') }}</p>
+                        <p class="text-sm font-medium"><?php echo e(session('success')); ?></p>
                     </div>
                     <button @click="show=false" class="text-blue-400 hover:text-blue-700">✕</button>
                 </div>
-            @endif
-            @if(session('error'))
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(session('error')): ?>
                 <div x-data="{show:true}" x-show="show" x-init="setTimeout(()=>show=false,5000)"
                      class="mx-3 sm:mx-4 lg:mx-8 mt-3 sm:mt-4 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl flex items-center gap-3">
                     <span class="text-lg">❌</span>
-                    <p class="text-sm font-medium">{{ session('error') }}</p>
+                    <p class="text-sm font-medium"><?php echo e(session('error')); ?></p>
                 </div>
-            @endif
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
             <main class="flex-1 p-3 sm:p-4 lg:p-8 overflow-x-hidden overflow-y-auto page-content">
-                {{ $slot }}
+                <?php echo e($slot); ?>
+
             </main>
 
             <footer class="px-4 lg:px-8 py-3 border-t border-slate-100 bg-white flex-shrink-0">
                 <p class="text-xs text-slate-400 text-center">
-                    Finance Tracker &copy; {{ now()->year }}
+                    Finance Tracker &copy; <?php echo e(now()->year); ?>
+
                 </p>
             </footer>
         </div>
     </div>
 
-    @livewire('notification')
+    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('notification');
 
-    @livewireScripts(['defer' => true])
+$__key = null;
 
-    {{-- ── Currency Formatter Script (global) ── --}}
+$__key ??= \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::generateKey('lw-3908560687-1', $__key);
+
+$__html = app('livewire')->mount($__name, $__params, $__key);
+
+echo $__html;
+
+unset($__html);
+unset($__key);
+unset($__name);
+unset($__params);
+unset($__split);
+if (isset($__slots)) unset($__slots);
+?>
+
+    <?php echo \Livewire\Mechanisms\FrontendAssets\FrontendAssets::scripts(['defer' => true]); ?>
+
+
+    
     <script>
     /**
      * Strategi: input display (data-currency) hanya untuk tampilan & formatting.
@@ -642,6 +686,6 @@
     document.addEventListener('currency:rebind', rebindCurrencyInputs);
     </script>
 
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
-</html>
+</html><?php /**PATH /Users/izarhairulanam/Downloads/finance-tracker-responsive 7/resources/views/layouts/app.blade.php ENDPATH**/ ?>

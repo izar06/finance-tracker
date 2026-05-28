@@ -7,6 +7,12 @@
             <p class="text-sm text-slate-500">Kelola pemasukan dan pengeluaran Anda</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+            @if(count($selectedIds) > 0)
+                <button wire:click="confirmBulkDelete"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-rose-500 border border-rose-500 rounded-xl hover:bg-rose-600 transition-colors">
+                    <span>🗑️</span> Hapus ({{ count($selectedIds) }})
+                </button>
+            @endif
             <button wire:click="exportExcel"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
                 <span>📊</span> Excel
@@ -14,6 +20,10 @@
             <button wire:click="exportPdf"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
                 <span>📄</span> PDF
+            </button>
+            <button wire:click="openImportModal"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                <span>📥</span> Import
             </button>
             <button wire:click="openForm"
                     class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-md shadow-primary-500/25">
@@ -24,7 +34,8 @@
 
     {{-- Filters --}}
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 mb-5">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {{-- Row 1 --}}
             <div class="lg:col-span-2">
                 <input wire:model.live.debounce.400ms="search" type="text"
                        placeholder="🔍 Cari transaksi..."
@@ -36,6 +47,15 @@
                 <option value="income">Pemasukan</option>
                 <option value="expense">Pengeluaran</option>
             </select>
+            <select wire:model.live="filterCategory"
+                    class="px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white {{ $filterCategory ? 'border-primary-400 ring-2 ring-primary-200' : '' }}">
+                <option value="">Semua Kategori</option>
+                @foreach($this->categories as $cat)
+                    <option value="{{ $cat }}">{{ $cat }}</option>
+                @endforeach
+            </select>
+
+            {{-- Row 2 --}}
             <select wire:model.live="filterPaymentMethod"
                     class="px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white">
                 <option value="">Semua Metode</option>
@@ -64,6 +84,17 @@
                 <option value="not_recurring">Sekali saja</option>
             </select>
         </div>
+
+        {{-- Active filter badge --}}
+        @if($filterCategory)
+            <div class="mt-3 flex items-center gap-2">
+                <span class="text-xs text-slate-400">Filter aktif:</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200 rounded-lg">
+                    🏷️ {{ $filterCategory }}
+                    <button wire:click="$set('filterCategory', '')" class="hover:text-primary-900 font-bold leading-none">✕</button>
+                </span>
+            </div>
+        @endif
     </div>
 
     {{-- Table --}}
@@ -123,6 +154,11 @@
             <table class="w-full text-sm">
                 <thead class="bg-slate-50 border-b border-slate-100">
                     <tr>
+                        <th class="text-center px-4 py-3.5 font-semibold text-slate-600 w-10">
+                            <input type="checkbox" wire:model.live="selectAll"
+                                   class="w-4 h-4 rounded accent-primary-500 cursor-pointer">
+                        </th>
+                        <th class="text-center px-3 py-3.5 font-semibold text-slate-600 w-12">No</th>
                         <th class="text-left px-5 py-3.5 font-semibold text-slate-600">
                             <button wire:click="sortColumn('date')" class="flex items-center gap-1 hover:text-primary-600">
                                 Tanggal
@@ -144,7 +180,14 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse($transactions as $tx)
-                        <tr class="hover:bg-slate-50 transition-colors {{ $tx->is_recurring ? 'bg-violet-50/30' : '' }}">
+                        <tr class="hover:bg-slate-50 transition-colors {{ $tx->is_recurring ? 'bg-violet-50/30' : '' }} {{ in_array((string)$tx->id, $selectedIds) ? 'bg-rose-50/40' : '' }}">
+                            <td class="px-4 py-3.5 text-center">
+                                <input type="checkbox" wire:model.live="selectedIds" value="{{ $tx->id }}"
+                                       class="w-4 h-4 rounded accent-primary-500 cursor-pointer">
+                            </td>
+                            <td class="px-3 py-3.5 text-center text-sm text-slate-400 font-medium">
+                                {{ $transactions->firstItem() + $loop->index }}
+                            </td>
                             <td class="px-5 py-3.5 text-slate-500 whitespace-nowrap">{{ $tx->date->translatedFormat('d M Y') }}</td>
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-2">
@@ -205,7 +248,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-16 text-center">
+                            <td colspan="9" class="py-16 text-center">
                                 <span class="text-4xl block mb-3">💳</span>
                                 <p class="text-slate-500 font-medium">Tidak ada transaksi ditemukan</p>
                                 <p class="text-sm text-slate-400 mt-1">Coba ubah filter atau tambah transaksi baru</p>
@@ -218,6 +261,47 @@
 
         @if($transactions->hasPages())
             <div class="px-5 py-4 border-t border-slate-100">{{ $transactions->links() }}</div>
+        @endif
+
+        {{-- Summary Bar --}}
+        @if($filteredSummary['count'] > 0)
+        <div class="px-5 py-4 border-t border-slate-100 bg-slate-50/60">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <p class="text-xs text-slate-400 font-medium">
+                    Ringkasan dari <span class="font-semibold text-slate-600">{{ number_format($filteredSummary['count']) }}</span> transaksi
+                    @if($search || $filterType || $filterCategory || $filterPaymentMethod || $filterMonth || $filterYear || $filterRecurring)
+                        <span class="ml-1 text-primary-500">(hasil filter)</span>
+                    @endif
+                </p>
+                <div class="flex flex-wrap items-center gap-3 sm:gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0"></span>
+                        <div>
+                            <p class="text-xs text-slate-400 leading-none mb-0.5">Total Pemasukan</p>
+                            <p class="text-sm font-bold text-emerald-600">+ Rp {{ number_format($filteredSummary['income'], 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0"></span>
+                        <div>
+                            <p class="text-xs text-slate-400 leading-none mb-0.5">Total Pengeluaran</p>
+                            <p class="text-sm font-bold text-rose-600">- Rp {{ number_format($filteredSummary['expense'], 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full {{ $filteredSummary['balance'] >= 0 ? 'bg-primary-400' : 'bg-amber-400' }} flex-shrink-0"></span>
+                        <div>
+                            <p class="text-xs text-slate-400 leading-none mb-0.5">Saldo</p>
+                            <p class="text-sm font-bold {{ $filteredSummary['balance'] >= 0 ? 'text-primary-600' : 'text-amber-600' }}">
+                                {{ $filteredSummary['balance'] >= 0 ? '+' : '' }} Rp {{ number_format($filteredSummary['balance'], 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         @endif
     </div>
 
@@ -497,6 +581,128 @@
                             ⏹ Hentikan
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    @endif
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    {{-- BULK DELETE MODAL --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    @if($showBulkDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
+                <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-2xl">🗑️</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-2">Hapus {{ count($selectedIds) }} Transaksi?</h3>
+                <p class="text-sm text-slate-500 mb-6">Semua transaksi yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.</p>
+                <div class="flex gap-3">
+                    <button wire:click="$set('showBulkDeleteModal', false)"
+                            class="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200">Batal</button>
+                    <button wire:click="bulkDeleteTransactions"
+                            class="flex-1 py-2.5 text-sm font-semibold text-white bg-rose-500 rounded-xl hover:bg-rose-600">Hapus Semua</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    {{-- IMPORT MODAL --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    @if($showImportModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+
+                {{-- Modal Header --}}
+                <div class="flex items-center justify-between p-5 border-b border-slate-100">
+                    <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        📥 Import Transaksi
+                    </h3>
+                    <button wire:click="closeImportModal" class="p-2 hover:bg-slate-100 rounded-xl text-slate-400">✕</button>
+                </div>
+
+                <div class="p-5 space-y-4">
+
+                    {{-- Result state (setelah import) --}}
+                    @if($importedCount !== null)
+                        <div class="space-y-3">
+                            {{-- Success summary --}}
+                            <div class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                                <span class="text-xl">✅</span>
+                                <div>
+                                    <p class="text-sm font-semibold text-emerald-700">{{ $importedCount }} transaksi berhasil diimport</p>
+                                    @if($skippedCount > 0)
+                                        <p class="text-xs text-emerald-600">{{ $skippedCount }} baris dilewati</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Error list --}}
+                            @if(count($importErrors) > 0)
+                                <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+                                    <p class="text-xs font-semibold text-rose-700 mb-2">Detail baris yang dilewati:</p>
+                                    <ul class="space-y-1">
+                                        @foreach($importErrors as $err)
+                                            <li class="text-xs text-rose-600">• {{ $err }}</li>
+                                        @endforeach
+                                    </ul>
+                                    @if($skippedCount > count($importErrors))
+                                        <p class="text-xs text-rose-400 mt-1">...dan {{ $skippedCount - count($importErrors) }} baris lainnya.</p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            <button wire:click="closeImportModal"
+                                    class="w-full py-2.5 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors">
+                                Selesai
+                            </button>
+                        </div>
+
+                    {{-- Upload state --}}
+                    @else
+                        {{-- Format info --}}
+                        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 space-y-1">
+                            <p class="font-semibold">Format kolom yang didukung:</p>
+                            <p><span class="font-medium">tipe</span> — income/expense atau pemasukan/pengeluaran</p>
+                            <p><span class="font-medium">judul</span> — nama transaksi (wajib)</p>
+                            <p><span class="font-medium">jumlah</span> — nominal angka (wajib)</p>
+                            <p><span class="font-medium">kategori</span> — nama kategori</p>
+                            <p><span class="font-medium">tanggal</span> — format YYYY-MM-DD</p>
+                            <p><span class="font-medium">metode_pembayaran</span> — opsional</p>
+                            <p><span class="font-medium">catatan</span> — opsional</p>
+                        </div>
+
+                        {{-- Template download --}}
+                        <button wire:click="downloadTemplate"
+                                class="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium text-primary-600 border border-primary-200 bg-primary-50 rounded-xl hover:bg-primary-100 transition-colors">
+                            ⬇️ Download template CSV
+                        </button>
+
+                        {{-- File input --}}
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1.5">Pilih file (.xlsx, .xls, .csv)</label>
+                            <input type="file" wire:model="importFile" accept=".xlsx,.xls,.csv"
+                                   class="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 border border-slate-200 rounded-xl p-1 cursor-pointer">
+                            @error('importFile') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        {{-- Loading indicator saat upload --}}
+                        <div wire:loading wire:target="importFile" class="text-xs text-slate-400 text-center">Mengunggah file...</div>
+
+                        <div class="flex gap-3 pt-1">
+                            <button wire:click="closeImportModal"
+                                    class="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                                Batal
+                            </button>
+                            <button wire:click="importTransactions"
+                                    wire:loading.attr="disabled"
+                                    wire:target="importTransactions"
+                                    class="flex-1 py-2.5 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-60">
+                                <span wire:loading.remove wire:target="importTransactions">Import Sekarang</span>
+                                <span wire:loading wire:target="importTransactions">Memproses...</span>
+                            </button>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
