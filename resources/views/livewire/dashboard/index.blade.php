@@ -118,161 +118,178 @@
         </div>
     </div>
 
-    {{-- History Transaksi per Metode Pembayaran --}}
-    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 mb-4 sm:mb-8"
-         x-data="{ open: null, filter: 'semua' }">
+    {{-- Widget Row: Top Expenses + Urgent Goals --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-8">
 
-        {{-- Header --}}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-            <div>
-                <h3 class="font-bold text-slate-800 text-base">🧾 History per Metode Pembayaran</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Riwayat transaksi dikelompokkan berdasarkan cara bayar</p>
-            </div>
-            {{-- Filter pemasukan/pengeluaran --}}
-            <div class="flex items-center gap-1.5 bg-slate-100 rounded-xl p-1 self-start flex-shrink-0">
-                <button @click="filter='semua'; open=null"
-                        :class="filter==='semua' ? 'bg-white shadow-sm text-slate-800 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-                        class="px-3 py-1.5 text-xs rounded-lg transition-all">Semua</button>
-                <button @click="filter='income'; open='all'"
-                        :class="filter==='income' ? 'bg-white shadow-sm text-emerald-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-                        class="px-3 py-1.5 text-xs rounded-lg transition-all">📥 Masuk</button>
-                <button @click="filter='expense'; open='all'"
-                        :class="filter==='expense' ? 'bg-white shadow-sm text-rose-600 font-semibold' : 'text-slate-500 hover:text-slate-700'"
-                        class="px-3 py-1.5 text-xs rounded-lg transition-all">📤 Keluar</button>
-            </div>
-        </div>
-
-        @php
-            $pmData = $this->paymentMethodChartData;
-        @endphp
-
-        @if(count($pmData) > 0)
-            <div class="space-y-2">
-                @foreach($pmData as $idx => $pm)
-                    @php
-                        $totalTxAll = $pm['all_income_count'] + $pm['all_expense_count'];
-                        $accentBgs  = ['bg-violet-500','bg-blue-500','bg-sky-500','bg-teal-500','bg-amber-500','bg-pink-500','bg-indigo-500','bg-orange-500'];
-                        $accentBg   = $accentBgs[$idx % count($accentBgs)];
-                        // apakah method ini punya transaksi income / expense?
-                        $hasIncome  = $pm['all_income_count'] > 0;
-                        $hasExpense = $pm['all_expense_count'] > 0;
-                    @endphp
-
-                    {{-- Sembunyikan card jika filter aktif tapi method tidak punya tipe itu --}}
-                    <div x-show="filter==='semua' || (filter==='income' && {{ $hasIncome ? 'true' : 'false' }}) || (filter==='expense' && {{ $hasExpense ? 'true' : 'false' }})"
-                         class="rounded-2xl border border-slate-100 overflow-hidden">
-
-                        {{-- Method Header — click to expand --}}
-                        <button type="button"
-                                @click="open = (open === {{ $idx }} && filter==='semua') ? null : {{ $idx }}"
-                                class="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors text-left">
-
-                            <div class="w-9 h-9 {{ $accentBg }} rounded-xl flex items-center justify-center text-base flex-shrink-0 shadow-sm">
-                                {{ $pm['icon'] }}
-                            </div>
-
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-bold text-slate-800">{{ $pm['method'] }}</p>
-                                <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    @if($hasIncome)
-                                        <span class="text-xs text-emerald-600 font-medium">{{ $pm['all_income_count'] }} masuk</span>
-                                    @endif
-                                    @if($hasExpense)
-                                        <span class="text-xs text-rose-500 font-medium">{{ $pm['all_expense_count'] }} keluar</span>
-                                    @endif
-                                    <span class="text-xs text-slate-300">·</span>
-                                    <span class="text-xs text-slate-400">{{ $totalTxAll }} total</span>
-                                </div>
-                            </div>
-
-                            {{-- Ringkasan kanan --}}
-                            <div class="text-right flex-shrink-0 mr-2" x-data="{ get hidden() { return $store.finance.hidden; } }">
-                                @if($hasIncome)
-                                    <p class="text-xs font-semibold text-emerald-600">
-                                        <span x-show="!hidden">+Rp {{ number_format($pm['all_income'], 0, ',', '.') }}</span>
-                                        <span x-show="hidden" class="tracking-widest text-emerald-300">+Rp ••••••</span>
-                                    </p>
-                                @endif
-                                @if($hasExpense)
-                                    <p class="text-xs font-semibold text-rose-500">
-                                        <span x-show="!hidden">−Rp {{ number_format($pm['all_expense'], 0, ',', '.') }}</span>
-                                        <span x-show="hidden" class="tracking-widest text-rose-300">−Rp ••••••</span>
-                                    </p>
-                                @endif
-                            </div>
-
-                            <div class="text-slate-300 transition-transform duration-200 flex-shrink-0"
-                                 :class="(open === {{ $idx }} || open === 'all') ? 'rotate-180' : ''">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </div>
-                        </button>
-
-                        {{-- Transaction list — terbuka jika diklik atau filter aktif --}}
-                        <div x-show="open === {{ $idx }} || open === 'all'"
-                             x-transition:enter="transition ease-out duration-150"
-                             x-transition:enter-start="opacity-0"
-                             x-transition:enter-end="opacity-100"
-                             x-transition:leave="transition ease-in duration-100"
-                             x-transition:leave-end="opacity-0"
-                             class="border-t border-slate-100">
-
-                            @if(count($pm['recent_transactions']) > 0)
-                                <div class="divide-y divide-slate-50">
-                                    @foreach($pm['recent_transactions'] as $tx)
-                                        {{-- Tampilkan baris sesuai filter --}}
-                                        <div x-show="filter === 'semua' || filter === '{{ $tx['type'] }}'"
-                                             class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/70 transition-colors">
-
-                                            {{-- Type dot --}}
-                                            <div class="w-2 h-2 rounded-full flex-shrink-0 {{ $tx['type'] === 'income' ? 'bg-emerald-400' : 'bg-rose-400' }}"></div>
-
-                                            {{-- Info --}}
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-slate-700 truncate">{{ $tx['title'] }}</p>
-                                                <p class="text-xs text-slate-400 mt-0.5">
-                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 text-xs">{{ $tx['category'] }}</span>
-                                                    <span class="ml-1">{{ $tx['date'] }}</span>
-                                                </p>
-                                            </div>
-
-                                            {{-- Amount --}}
-                                            <p class="text-sm font-bold flex-shrink-0 {{ $tx['type'] === 'income' ? 'text-emerald-600' : 'text-rose-500' }}"
-                                               x-data="{ get hidden() { return $store.finance.hidden; } }">
-                                                <span x-show="!hidden">{{ $tx['type'] === 'income' ? '+' : '−' }}Rp {{ number_format($tx['amount'], 0, ',', '.') }}</span>
-                                                <span x-show="hidden" class="tracking-widest {{ $tx['type'] === 'income' ? 'text-emerald-300' : 'text-rose-300' }}">••••••</span>
-                                            </p>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                <div class="px-4 py-2.5 bg-slate-50/60 border-t border-slate-100 text-center">
-                                    <a href="{{ route('transactions') }}"
-                                       class="text-xs text-primary-500 hover:text-primary-700 font-medium transition-colors">
-                                        Lihat semua transaksi {{ $pm['method'] }} →
-                                    </a>
-                                </div>
-                            @else
-                                <div class="px-4 py-5 text-center text-xs text-slate-400">Belum ada transaksi</div>
-                            @endif
-                        </div>
-
-                    </div>
-                @endforeach
-            </div>
-
-        @else
-            <div class="flex flex-col items-center justify-center py-14 text-slate-400">
-                <div class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-3xl mb-4">🧾</div>
-                <p class="text-sm font-semibold text-slate-600">Belum ada riwayat transaksi</p>
-                <p class="text-xs text-slate-400 mt-1 text-center max-w-xs">Pilih metode pembayaran saat menambahkan transaksi agar history muncul di sini</p>
-                <a href="{{ route('transactions') }}"
-                   class="mt-4 px-4 py-2 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors">
-                    + Tambah Transaksi
+        {{-- Top 5 Pengeluaran Terbesar Bulan Ini --}}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-800">💸 Pengeluaran Terbesar</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Top 5 bulan ini</p>
+                </div>
+                <a href="{{ route('transactions') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors flex-shrink-0">
+                    Lihat semua →
                 </a>
             </div>
-        @endif
+
+            @php
+                $topExpenses      = $this->topExpenses;
+                $topExpensesMax   = $topExpenses->max('amount') ?: 1;
+                $rankColors       = ['bg-rose-500', 'bg-rose-400', 'bg-rose-300', 'bg-rose-200', 'bg-rose-100'];
+                $rankTextColors   = ['text-rose-700', 'text-rose-600', 'text-rose-500', 'text-rose-400', 'text-rose-400'];
+            @endphp
+
+            @if($topExpenses->count() > 0)
+                <div class="divide-y divide-slate-50">
+                    @foreach($topExpenses as $i => $tx)
+                        @php $pct = round(($tx->amount / $topExpensesMax) * 100); @endphp
+                        <div class="flex items-center gap-3 px-4 sm:px-5 py-3 hover:bg-slate-50 transition-colors">
+                            {{-- Rank badge --}}
+                            <span class="w-5 h-5 rounded-full {{ $rankColors[$i] }} flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                                {{ $i + 1 }}
+                            </span>
+
+                            {{-- Info + bar --}}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-slate-800 truncate leading-tight">{{ $tx->title }}</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <div class="flex-1 bg-slate-100 rounded-full h-1.5">
+                                        <div class="{{ $rankColors[$i] }} h-1.5 rounded-full transition-all duration-500"
+                                             style="width: {{ $pct }}%"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-400 flex-shrink-0">{{ $tx->category }}</span>
+                                </div>
+                            </div>
+
+                            {{-- Amount --}}
+                            <p class="text-sm font-bold {{ $rankTextColors[$i] }} flex-shrink-0 whitespace-nowrap"
+                               x-data="{ get hidden() { return $store.finance.hidden; } }">
+                                <span x-show="!hidden">Rp {{ number_format($tx->amount, 0, ',', '.') }}</span>
+                                <span x-show="hidden" class="tracking-widest text-rose-300">••••••</span>
+                            </p>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <span class="text-3xl block mb-2">💸</span>
+                    <p class="text-sm">Belum ada pengeluaran bulan ini</p>
+                    <a href="{{ route('transactions') }}" class="text-xs text-primary-500 mt-1 hover:underline">Tambah transaksi →</a>
+                </div>
+            @endif
+        </div>
+
+        {{-- Goals Paling Dekat Deadline --}}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-800">⏳ Deadline Terdekat</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tujuan keuangan yang mendesak</p>
+                </div>
+                <a href="{{ route('goals') }}" class="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors flex-shrink-0">
+                    Lihat semua →
+                </a>
+            </div>
+
+            @php $urgentGoals = $this->urgentGoals; @endphp
+
+            @if($urgentGoals->count() > 0)
+                <div class="divide-y divide-slate-50 px-4 sm:px-6">
+                    @foreach($urgentGoals as $goal)
+                        @php
+                            $daysLeft   = (int) now()->startOfDay()->diffInDays($goal->deadline->startOfDay(), false);
+                            $pct        = $goal->progress_percentage;
+                            $isOverdue  = $daysLeft < 0;
+                            $isUrgent   = $daysLeft >= 0 && $daysLeft <= 30;
+
+                            // Warna bar & badge berdasarkan sisa hari
+                            if ($isOverdue) {
+                                $barColor    = 'bg-rose-500';
+                                $badgeBg     = 'bg-rose-50';
+                                $badgeText   = 'text-rose-600';
+                                $daysLabel   = abs($daysLeft) . ' hari terlambat';
+                            } elseif ($daysLeft === 0) {
+                                $barColor    = 'bg-rose-500';
+                                $badgeBg     = 'bg-rose-50';
+                                $badgeText   = 'text-rose-600';
+                                $daysLabel   = 'Hari ini!';
+                            } elseif ($isUrgent) {
+                                $barColor    = 'bg-amber-400';
+                                $badgeBg     = 'bg-amber-50';
+                                $badgeText   = 'text-amber-600';
+                                $daysLabel   = $daysLeft . ' hari lagi';
+                            } else {
+                                $barColor    = 'bg-primary-500';
+                                $badgeBg     = 'bg-primary-50';
+                                $badgeText   = 'text-primary-600';
+                                $daysLabel   = $daysLeft . ' hari lagi';
+                            }
+
+                            // Estimasi apakah target bisa tercapai
+                            $remaining      = max(0, $goal->target_amount - $goal->current_amount);
+                            $dailyNeeded    = $daysLeft > 0 ? $remaining / $daysLeft : null;
+                        @endphp
+
+                        <div class="py-4">
+                            {{-- Header: icon + nama + badge hari --}}
+                            <div class="flex items-center justify-between mb-2 gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="text-xl flex-shrink-0">{{ $goal->icon }}</span>
+                                    <p class="text-sm font-semibold text-slate-800 truncate">{{ $goal->name }}</p>
+                                </div>
+                                <span class="text-xs font-semibold {{ $badgeBg }} {{ $badgeText }} px-2 py-0.5 rounded-full flex-shrink-0 whitespace-nowrap">
+                                    {{ $daysLabel }}
+                                </span>
+                            </div>
+
+                            {{-- Progress bar --}}
+                            <div class="w-full bg-slate-100 rounded-full h-2 mb-2">
+                                <div class="{{ $barColor }} h-2 rounded-full transition-all duration-700"
+                                     style="width: {{ $pct }}%"></div>
+                            </div>
+
+                            {{-- Detail bawah --}}
+                            <div class="flex items-center justify-between text-xs"
+                                 x-data="{ get hidden() { return $store.finance.hidden; } }">
+                                <span class="text-slate-400">
+                                    <span x-show="!hidden">
+                                        Rp {{ number_format($goal->current_amount, 0, ',', '.') }}
+                                        <span class="text-slate-300">/</span>
+                                        Rp {{ number_format($goal->target_amount, 0, ',', '.') }}
+                                    </span>
+                                    <span x-show="hidden" class="tracking-widest text-slate-300">•••••• / ••••••</span>
+                                </span>
+                                <span class="font-bold {{ $pct >= 100 ? 'text-emerald-600' : ($isOverdue ? 'text-rose-500' : 'text-slate-500') }}">
+                                    {{ $pct }}%
+                                </span>
+                            </div>
+
+                            {{-- Estimasi nabung per hari (hanya jika belum selesai & deadline belum lewat) --}}
+                            @if($dailyNeeded !== null && $pct < 100 && !$isOverdue)
+                                <p class="text-xs text-slate-400 mt-1.5"
+                                   x-data="{ get hidden() { return $store.finance.hidden; } }">
+                                    Perlu nabung ≈
+                                    <span x-show="!hidden" class="font-medium text-slate-600">
+                                        Rp {{ number_format($dailyNeeded, 0, ',', '.') }}/hari
+                                    </span>
+                                    <span x-show="hidden" class="tracking-widest text-slate-300">••••••</span>
+                                </p>
+                            @elseif($pct >= 100)
+                                <p class="text-xs text-emerald-600 font-medium mt-1.5">✅ Target tercapai!</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                    <span class="text-3xl block mb-2">🎯</span>
+                    <p class="text-sm">Belum ada tujuan keuangan aktif</p>
+                    <a href="{{ route('goals') }}" class="text-xs text-primary-500 mt-1 hover:underline">Buat tujuan pertama →</a>
+                </div>
+            @endif
+        </div>
+
     </div>
 
     {{-- Bottom Row --}}

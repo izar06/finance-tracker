@@ -56,6 +56,27 @@ class Dashboard extends Component
         return FinancialGoal::active()->orderBy('deadline')->take(3)->get();
     }
 
+    // ── Top 5 pengeluaran terbesar bulan ini ─────────────────────────────
+    public function getTopExpensesProperty()
+    {
+        return Transaction::expense()
+            ->whereYear('date', $this->selectedYear)
+            ->whereMonth('date', $this->selectedMonth)
+            ->orderByDesc('amount')
+            ->take(5)
+            ->get(['id', 'title', 'amount', 'category', 'date']);
+    }
+
+    // ── Goals paling dekat deadline (max 3, hanya yang aktif) ────────────
+    public function getUrgentGoalsProperty()
+    {
+        return FinancialGoal::active()
+            ->whereNotNull('deadline')
+            ->orderBy('deadline')
+            ->take(3)
+            ->get();
+    }
+
     public function getUpcomingBillsProperty()
     {
         return Bill::active()

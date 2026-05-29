@@ -18,8 +18,13 @@ class Budgets extends Component
     public bool $showForm          = false;
     public bool $showDeleteModal   = false;
     public bool $showCopyModal     = false;
+    public bool $showBulkDeleteModal = false;
     public ?int $editingId         = null;
     public ?int $deletingId        = null;
+
+    // Bulk select
+    public array $selectedIds = [];
+    public bool  $selectAll   = false;
 
     // Fields
     public string $category = '';
@@ -415,6 +420,46 @@ class Budgets extends Component
     {
         $this->showCopyModal = false;
         $this->copyPreview   = [];
+    }
+
+    // ── Bulk select & delete ─────────────────────────────────────────────
+    public function updatedSelectAll(bool $value): void
+    {
+        $this->selectedIds = $value
+            ? $this->budgets->pluck('id')->map(fn($id) => (string) $id)->toArray()
+            : [];
+    }
+
+    public function updatedSelectedIds(): void
+    {
+        $this->selectAll = count($this->selectedIds) === $this->budgets->count() && $this->budgets->count() > 0;
+    }
+
+    public function openBulkDeleteModal(): void
+    {
+        if (empty($this->selectedIds)) return;
+        $this->showBulkDeleteModal = true;
+    }
+
+    public function bulkDelete(): void
+    {
+        $ids = array_map('intval', $this->selectedIds);
+
+        Budget::whereIn('id', $ids)
+            ->where('user_id', auth()->id())
+            ->delete();
+
+        $count = count($ids);
+        $this->selectedIds         = [];
+        $this->selectAll           = false;
+        $this->showBulkDeleteModal = false;
+
+        $this->dispatch('notify', message: "{$count} anggaran berhasil dihapus.", type: 'success');
+    }
+
+    public function cancelBulkDelete(): void
+    {
+        $this->showBulkDeleteModal = false;
     }
 
     // ── Render ────────────────────────────────────────────────────────────

@@ -12,13 +12,18 @@ class Bills extends Component
     public string $filterStatus = 'active';
 
     // Form
-    public bool  $showForm        = false;
-    public bool  $showDeleteModal = false;
-    public bool  $showPayModal    = false;
-    public bool  $showIconPicker  = false;
-    public ?int  $editingId       = null;
-    public ?int  $deletingId      = null;
-    public ?int  $payingId        = null;
+    public bool  $showForm            = false;
+    public bool  $showDeleteModal     = false;
+    public bool  $showPayModal        = false;
+    public bool  $showIconPicker      = false;
+    public bool  $showBulkDeleteModal = false;
+    public ?int  $editingId           = null;
+    public ?int  $deletingId          = null;
+    public ?int  $payingId            = null;
+
+    // Bulk select
+    public array $selectedIds  = [];
+    public bool  $selectAll    = false;
 
     // Fields
     public string $name           = '';
@@ -259,6 +264,46 @@ class Bills extends Component
         $this->notes          = '';
         $this->showIconPicker = false;
         $this->resetValidation();
+    }
+
+    // ── Bulk select & delete ─────────────────────────────────────────────
+    public function updatedSelectAll(bool $value): void
+    {
+        $this->selectedIds = $value
+            ? $this->bills->pluck('id')->map(fn($id) => (string) $id)->toArray()
+            : [];
+    }
+
+    public function updatedSelectedIds(): void
+    {
+        $this->selectAll = count($this->selectedIds) === $this->bills->count() && $this->bills->count() > 0;
+    }
+
+    public function openBulkDeleteModal(): void
+    {
+        if (empty($this->selectedIds)) return;
+        $this->showBulkDeleteModal = true;
+    }
+
+    public function bulkDelete(): void
+    {
+        $ids = array_map('intval', $this->selectedIds);
+
+        Bill::whereIn('id', $ids)
+            ->where('user_id', auth()->id())
+            ->delete();
+
+        $count = count($ids);
+        $this->selectedIds        = [];
+        $this->selectAll          = false;
+        $this->showBulkDeleteModal = false;
+
+        $this->dispatch('notify', message: "{$count} tagihan berhasil dihapus.", type: 'success');
+    }
+
+    public function cancelBulkDelete(): void
+    {
+        $this->showBulkDeleteModal = false;
     }
 
     public function render()

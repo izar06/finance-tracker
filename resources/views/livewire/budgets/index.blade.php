@@ -80,6 +80,31 @@
 
     {{-- Budget List --}}
     @if($this->budgets->count() > 0)
+
+        {{-- Bulk action bar --}}
+        <div class="flex items-center justify-between mb-3 px-1">
+            <label class="flex items-center gap-2.5 cursor-pointer select-none group">
+                <input type="checkbox" wire:model.live="selectAll"
+                       class="w-4 h-4 rounded accent-primary-500 cursor-pointer">
+                <span class="text-sm text-slate-500 group-hover:text-slate-700 transition-colors">
+                    @if($selectAll)
+                        Semua dipilih ({{ count($selectedIds) }})
+                    @elseif(count($selectedIds) > 0)
+                        {{ count($selectedIds) }} dipilih
+                    @else
+                        Pilih semua
+                    @endif
+                </span>
+            </label>
+
+            @if(count($selectedIds) > 0)
+                <button wire:click="openBulkDeleteModal"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors">
+                    🗑️ Hapus {{ count($selectedIds) }} anggaran
+                </button>
+            @endif
+        </div>
+
         <div class="space-y-3 mb-5">
             @foreach($this->budgets as $budget)
                 @php
@@ -91,7 +116,12 @@
                 @endphp
                 <div class="rounded-2xl border {{ $bgLight }} shadow-sm p-4 sm:p-5">
                     <div class="flex items-start justify-between gap-3 mb-3">
-                        <div class="min-w-0">
+                        {{-- Checkbox --}}
+                        <div class="flex-shrink-0 pt-0.5">
+                            <input type="checkbox" wire:model.live="selectedIds" value="{{ $budget->id }}"
+                                   class="w-4 h-4 rounded accent-primary-500 cursor-pointer mt-1">
+                        </div>
+                        <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <h3 class="font-semibold text-slate-800 text-sm sm:text-base">{{ $budget->category }}</h3>
                                 @if($budget->is_over_budget)
@@ -469,6 +499,30 @@
                             class="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
                     <button wire:click="deleteBudget"
                             class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    @endif
+    {{-- Bulk Delete Modal --}}
+    @if($showBulkDeleteModal)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" wire:click="cancelBulkDelete"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm z-10">
+                <div class="text-center mb-5">
+                    <span class="text-4xl block mb-3">🗑️</span>
+                    <h3 class="font-bold text-slate-800 text-lg mb-1">Hapus {{ count($selectedIds) }} Anggaran?</h3>
+                    <p class="text-sm text-slate-500">Anggaran yang dipilih akan dihapus permanen. Transaksi tidak terpengaruh.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button wire:click="cancelBulkDelete"
+                            class="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                        Batal
+                    </button>
+                    <button wire:click="bulkDelete" wire:loading.attr="disabled"
+                            class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-rose-500 rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-60">
+                        <span wire:loading.remove wire:target="bulkDelete">Ya, Hapus Semua</span>
+                        <span wire:loading wire:target="bulkDelete">Menghapus...</span>
+                    </button>
                 </div>
             </div>
         </div>
