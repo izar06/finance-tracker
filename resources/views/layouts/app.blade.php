@@ -221,6 +221,9 @@
         .dark .bg-black\/50             { background-color: rgba(0,0,0,.75) !important; }
         .dark .shadow-2xl               { box-shadow: 0 25px 50px rgba(0,0,0,.6) !important; }
 
+        /* Logout modal */
+        .dark .logout-modal-bg          { background: rgba(0,0,0,.65); }
+
         /* Pagination */
         .dark nav[aria-label="Pagination"] span,
         .dark nav[aria-label="Pagination"] a { background-color: #1e293b; border-color: #334155; color: #94a3b8; }
@@ -280,7 +283,8 @@
               this.darkMode = !this.darkMode;
               localStorage.setItem('darkMode', this.darkMode);
               document.documentElement.classList.toggle('dark', this.darkMode);
-          }
+          },
+
       }"
       x-init="
           $watch('sidebarCollapsed', v => {
@@ -483,12 +487,9 @@
                                 <p class="text-xs font-semibold text-primary-700">{{ auth()->user()->name ?? 'Pengguna' }}</p>
                                 <p class="text-xs text-primary-400 truncate">{{ auth()->user()->email ?? '' }}</p>
                             </div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="logout-btn">
-                                    <span>🚪</span> Keluar
-                                </button>
-                            </form>
+                            <button type="button" class="logout-btn" @click="$store.logout.open()">
+                                <span>🚪</span> Keluar
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -528,9 +529,155 @@
         </div>
     </div>
 
+    {{-- ═══ LOGOUT CONFIRMATION MODAL ═══ --}}
+    <div x-show="$store.logout.show" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style="background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);"
+         @keydown.escape.window="$store.logout.close()">
+
+        <div x-show="$store.logout.show"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+             @click.outside="$store.logout.close()"
+             class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+
+            {{-- Modal Header --}}
+            <div class="px-6 pt-6 pb-4 text-center">
+                <div class="w-16 h-16 bg-rose-100 dark:bg-rose-900/40 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-1">Keluar dari Akun?</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Kamu akan keluar dari <span class="font-semibold text-slate-700 dark:text-slate-300">Finance Tracker</span>. Pastikan semua perubahan sudah tersimpan.
+                </p>
+            </div>
+
+            {{-- User info strip --}}
+            <div class="mx-6 mb-5 bg-slate-50 dark:bg-slate-700/50 rounded-xl px-4 py-3 flex items-center gap-3">
+                <div class="w-9 h-9 bg-primary-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <span class="text-white text-sm font-bold">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</span>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{{ auth()->user()->name ?? 'Pengguna' }}</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 truncate">{{ auth()->user()->email ?? '' }}</p>
+                </div>
+            </div>
+
+            {{-- Action buttons --}}
+            <div class="px-6 pb-6 flex gap-3">
+                <button type="button"
+                        @click="$store.logout.close()"
+                        class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600
+                               text-sm font-semibold text-slate-600 dark:text-slate-300
+                               bg-white dark:bg-slate-700
+                               hover:bg-slate-50 dark:hover:bg-slate-600
+                               transition-colors focus:outline-none focus:ring-2 focus:ring-slate-300">
+                    Batal
+                </button>
+                <button type="button"
+                        @click="$store.logout.doLogout()"
+                        class="flex-1 px-4 py-2.5 rounded-xl
+                               text-sm font-semibold text-white
+                               bg-rose-500 hover:bg-rose-600 active:bg-rose-700
+                               transition-colors focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2
+                               flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Ya, Keluar
+                </button>
+            </div>
+        </div>
+    </div>
+
     @livewire('notification')
 
     @livewireScripts(['defer' => true])
+
+    {{-- ── Livewire 419 CSRF handler: refresh token & retry silently, no browser popup ── --}}
+    <script>
+    (function () {
+        // Override fetch globally so Livewire's internal requests
+        // are intercepted before the browser can show a native dialog.
+        var _origFetch = window.fetch;
+        window.fetch = async function (input, init) {
+            var res = await _origFetch(input, init);
+
+            // Only intercept Livewire update/upload calls returning 419
+            var url = (typeof input === 'string') ? input : (input.url || '');
+            if (res.status === 419 && url.indexOf('/livewire/') !== -1) {
+                // 1. Silently get a fresh CSRF token via a HEAD request to the current page
+                try {
+                    var refresh = await _origFetch(window.location.href, {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    var html = await refresh.text();
+                    var match = html.match(/<meta name="csrf-token" content="([^"]+)"/);
+                    if (match) {
+                        var newToken = match[1];
+                        // Update meta tag
+                        var meta = document.querySelector('meta[name="csrf-token"]');
+                        if (meta) meta.setAttribute('content', newToken);
+                        // Update init headers with new token and retry
+                        var newInit = Object.assign({}, init);
+                        newInit.headers = Object.assign({}, init && init.headers, {
+                            'X-CSRF-TOKEN': newToken
+                        });
+                        return _origFetch(input, newInit);
+                    }
+                } catch (e) {}
+
+                // If refresh failed, redirect to login cleanly (no browser dialog)
+                window.location.href = '{{ route("login") }}';
+                // Return a dummy response to stop further processing
+                return new Response('', { status: 200 });
+            }
+
+            return res;
+        };
+    })();
+    </script>
+
+    <script>
+    document.addEventListener('alpine:init', function () {
+        Alpine.store('logout', {
+            show: false,
+            open() { this.show = true; },
+            close() { this.show = false; },
+            async doLogout() {
+                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                try {
+                    await fetch('{{ route("logout") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        credentials: 'same-origin',
+                    });
+                } catch(e) {}
+                window.location.href = '{{ route("login") }}';
+            }
+        });
+    });
+    </script>
 
     {{-- ── Currency Formatter Script (global) ── --}}
     <script>
