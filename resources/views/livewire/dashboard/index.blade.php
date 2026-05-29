@@ -1,47 +1,82 @@
 <div>
     {{-- Stats Overview --}}
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5 mb-4 sm:mb-6">
+    <div x-data="{ get hidden() { return $store.finance.hidden; }, toggle() { $store.finance.toggle(); } }"
+         class="mb-4 sm:mb-6">
 
-        <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
-            <div class="flex items-start justify-between mb-2 sm:mb-3">
-                <div class="w-9 h-9 sm:w-11 sm:h-11 bg-emerald-50 rounded-xl flex items-center justify-center text-xl">📈</div>
-                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full hidden xs:block">Bulan Ini</span>
-            </div>
-            <p class="text-sm sm:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">Rp {{ number_format($this->monthlyIncome, 0, ',', '.') }}</p>
-            <p class="text-xs sm:text-sm text-slate-500">Total Pemasukan</p>
-        </div>
-
-        <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
-            <div class="flex items-start justify-between mb-2 sm:mb-3">
-                <div class="w-9 h-9 sm:w-11 sm:h-11 bg-rose-50 rounded-xl flex items-center justify-center text-xl">📉</div>
-                <span class="text-xs font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full hidden xs:block">Bulan Ini</span>
-            </div>
-            <p class="text-sm sm:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">Rp {{ number_format($this->monthlyExpense, 0, ',', '.') }}</p>
-            <p class="text-xs sm:text-sm text-slate-500">Total Pengeluaran</p>
-        </div>
-
-        <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
-            <div class="flex items-start justify-between mb-2 sm:mb-3">
-                <div class="w-9 h-9 sm:w-11 sm:h-11 {{ $this->monthlyBalance >= 0 ? 'bg-blue-50' : 'bg-orange-50' }} rounded-xl flex items-center justify-center text-xl">
-                    {{ $this->monthlyBalance >= 0 ? '✅' : '⚠️' }}
-                </div>
-                <span class="text-xs font-semibold {{ $this->monthlyBalance >= 0 ? 'text-blue-600 bg-blue-50' : 'text-orange-600 bg-orange-50' }} px-2 py-1 rounded-full">
-                    {{ $this->monthlyBalance >= 0 ? 'Surplus' : 'Defisit' }}
+        {{-- Section header with toggle button --}}
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ringkasan Keuangan</p>
+            <button @click="toggle()"
+                    class="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-all duration-200 select-none">
+                <span x-show="!hidden" class="flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                    Sembunyikan
                 </span>
-            </div>
-            <p class="text-sm sm:text-xl font-bold leading-tight {{ $this->monthlyBalance >= 0 ? 'text-slate-800' : 'text-rose-600' }} mb-0.5 sm:mb-1">
-                Rp {{ number_format(abs($this->monthlyBalance), 0, ',', '.') }}
-            </p>
-            <p class="text-xs sm:text-sm text-slate-500">Saldo Bulan Ini</p>
+                <span x-show="hidden" class="flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    Tampilkan
+                </span>
+            </button>
         </div>
 
-        <div class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-3 sm:p-5 shadow-lg shadow-primary-500/20">
-            <div class="flex items-start justify-between mb-3">
-                <div class="w-9 h-9 sm:w-11 sm:h-11 bg-white/20 rounded-xl flex items-center justify-center text-lg sm:text-xl">🏦</div>
-                <span class="text-xs font-semibold text-white/80 bg-white/20 px-1.5 py-0.5 rounded-full hidden xs:block">Total</span>
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5">
+
+            <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
+                <div class="flex items-start justify-between mb-2 sm:mb-3">
+                    <div class="w-9 h-9 sm:w-11 sm:h-11 bg-emerald-50 rounded-xl flex items-center justify-center text-xl">📈</div>
+                    <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full hidden xs:block">Bulan Ini</span>
+                </div>
+                <p class="text-sm sm:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
+                    <span x-show="!hidden">Rp {{ number_format($this->monthlyIncome, 0, ',', '.') }}</span>
+                    <span x-show="hidden" class="tracking-widest text-slate-400">Rp ••••••</span>
+                </p>
+                <p class="text-xs sm:text-sm text-slate-500">Total Pemasukan</p>
             </div>
-            <p class="text-sm sm:text-xl font-bold text-white mb-0.5 sm:mb-1 leading-tight">Rp {{ number_format($this->totalAssets, 0, ',', '.') }}</p>
-            <p class="text-xs sm:text-sm text-white/70">Nilai Aset</p>
+
+            <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
+                <div class="flex items-start justify-between mb-2 sm:mb-3">
+                    <div class="w-9 h-9 sm:w-11 sm:h-11 bg-rose-50 rounded-xl flex items-center justify-center text-xl">📉</div>
+                    <span class="text-xs font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full hidden xs:block">Bulan Ini</span>
+                </div>
+                <p class="text-sm sm:text-xl font-bold text-slate-800 mb-0.5 sm:mb-1 leading-tight">
+                    <span x-show="!hidden">Rp {{ number_format($this->monthlyExpense, 0, ',', '.') }}</span>
+                    <span x-show="hidden" class="tracking-widest text-slate-400">Rp ••••••</span>
+                </p>
+                <p class="text-xs sm:text-sm text-slate-500">Total Pengeluaran</p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
+                <div class="flex items-start justify-between mb-2 sm:mb-3">
+                    <div class="w-9 h-9 sm:w-11 sm:h-11 {{ $this->monthlyBalance >= 0 ? 'bg-blue-50' : 'bg-orange-50' }} rounded-xl flex items-center justify-center text-xl">
+                        {{ $this->monthlyBalance >= 0 ? '✅' : '⚠️' }}
+                    </div>
+                    <span class="text-xs font-semibold {{ $this->monthlyBalance >= 0 ? 'text-blue-600 bg-blue-50' : 'text-orange-600 bg-orange-50' }} px-2 py-1 rounded-full">
+                        {{ $this->monthlyBalance >= 0 ? 'Surplus' : 'Defisit' }}
+                    </span>
+                </div>
+                <p class="text-sm sm:text-xl font-bold leading-tight {{ $this->monthlyBalance >= 0 ? 'text-slate-800' : 'text-rose-600' }} mb-0.5 sm:mb-1">
+                    <span x-show="!hidden">Rp {{ number_format(abs($this->monthlyBalance), 0, ',', '.') }}</span>
+                    <span x-show="hidden" class="tracking-widest {{ $this->monthlyBalance >= 0 ? 'text-slate-400' : 'text-rose-300' }}">Rp ••••••</span>
+                </p>
+                <p class="text-xs sm:text-sm text-slate-500">Saldo Bulan Ini</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-3 sm:p-5 shadow-lg shadow-primary-500/20">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="w-9 h-9 sm:w-11 sm:h-11 bg-white/20 rounded-xl flex items-center justify-center text-lg sm:text-xl">🏦</div>
+                    <span class="text-xs font-semibold text-white/80 bg-white/20 px-1.5 py-0.5 rounded-full hidden xs:block">Total</span>
+                </div>
+                <p class="text-sm sm:text-xl font-bold text-white mb-0.5 sm:mb-1 leading-tight">
+                    <span x-show="!hidden">Rp {{ number_format($this->totalAssets, 0, ',', '.') }}</span>
+                    <span x-show="hidden" class="tracking-widest text-white/40">Rp ••••••</span>
+                </p>
+                <p class="text-xs sm:text-sm text-white/70">Nilai Aset</p>
+            </div>
         </div>
     </div>
 
@@ -151,12 +186,18 @@
                             </div>
 
                             {{-- Ringkasan kanan --}}
-                            <div class="text-right flex-shrink-0 mr-2">
+                            <div class="text-right flex-shrink-0 mr-2" x-data="{ get hidden() { return $store.finance.hidden; } }">
                                 @if($hasIncome)
-                                    <p class="text-xs font-semibold text-emerald-600">+Rp {{ number_format($pm['all_income'], 0, ',', '.') }}</p>
+                                    <p class="text-xs font-semibold text-emerald-600">
+                                        <span x-show="!hidden">+Rp {{ number_format($pm['all_income'], 0, ',', '.') }}</span>
+                                        <span x-show="hidden" class="tracking-widest text-emerald-300">+Rp ••••••</span>
+                                    </p>
                                 @endif
                                 @if($hasExpense)
-                                    <p class="text-xs font-semibold text-rose-500">−Rp {{ number_format($pm['all_expense'], 0, ',', '.') }}</p>
+                                    <p class="text-xs font-semibold text-rose-500">
+                                        <span x-show="!hidden">−Rp {{ number_format($pm['all_expense'], 0, ',', '.') }}</span>
+                                        <span x-show="hidden" class="tracking-widest text-rose-300">−Rp ••••••</span>
+                                    </p>
                                 @endif
                             </div>
 
@@ -197,8 +238,10 @@
                                             </div>
 
                                             {{-- Amount --}}
-                                            <p class="text-sm font-bold flex-shrink-0 {{ $tx['type'] === 'income' ? 'text-emerald-600' : 'text-rose-500' }}">
-                                                {{ $tx['type'] === 'income' ? '+' : '−' }}Rp {{ number_format($tx['amount'], 0, ',', '.') }}
+                                            <p class="text-sm font-bold flex-shrink-0 {{ $tx['type'] === 'income' ? 'text-emerald-600' : 'text-rose-500' }}"
+                                               x-data="{ get hidden() { return $store.finance.hidden; } }">
+                                                <span x-show="!hidden">{{ $tx['type'] === 'income' ? '+' : '−' }}Rp {{ number_format($tx['amount'], 0, ',', '.') }}</span>
+                                                <span x-show="hidden" class="tracking-widest {{ $tx['type'] === 'income' ? 'text-emerald-300' : 'text-rose-300' }}">••••••</span>
                                             </p>
                                         </div>
                                     @endforeach
@@ -254,8 +297,10 @@
                             <p class="text-sm font-medium text-slate-800 truncate">{{ $transaction->title }}</p>
                             <p class="text-xs text-slate-400 truncate">{{ $transaction->category }}<span class="hidden xs:inline"> · {{ $transaction->date->translatedFormat('d M Y') }}</span></p>
                         </div>
-                        <p class="text-sm font-bold whitespace-nowrap flex-shrink-0 {{ $transaction->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
-                            {{ $transaction->type === 'income' ? '+' : '-' }} Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                        <p class="text-sm font-bold whitespace-nowrap flex-shrink-0 {{ $transaction->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}"
+                           x-data="{ get hidden() { return $store.finance.hidden; } }">
+                            <span x-show="!hidden">{{ $transaction->type === 'income' ? '+' : '-' }} Rp {{ number_format($transaction->amount, 0, ',', '.') }}</span>
+                            <span x-show="hidden" class="tracking-widest {{ $transaction->type === 'income' ? 'text-emerald-300' : 'text-rose-300' }}">••••••</span>
                         </p>
                     </div>
                 @empty
@@ -290,9 +335,16 @@
                             <div class="h-2 rounded-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-700"
                                  style="width: {{ $goal->progress_percentage }}%"></div>
                         </div>
-                        <div class="flex justify-between text-xs text-slate-400">
-                            <span>Terkumpul: Rp {{ number_format($goal->current_amount, 0, ',', '.') }}</span>
-                            <span>Target: Rp {{ number_format($goal->target_amount, 0, ',', '.') }}</span>
+                        <div class="flex justify-between text-xs text-slate-400"
+                             x-data="{ get hidden() { return $store.finance.hidden; } }">
+                            <span>Terkumpul:
+                                <span x-show="!hidden">Rp {{ number_format($goal->current_amount, 0, ',', '.') }}</span>
+                                <span x-show="hidden" class="tracking-widest">••••••</span>
+                            </span>
+                            <span>Target:
+                                <span x-show="!hidden">Rp {{ number_format($goal->target_amount, 0, ',', '.') }}</span>
+                                <span x-show="hidden" class="tracking-widest">••••••</span>
+                            </span>
                         </div>
                     </div>
                 @empty
@@ -337,9 +389,16 @@
                             <div class="{{ $barColor }} h-1.5 rounded-full transition-all duration-500"
                                  style="width: {{ min(100, $pct) }}%"></div>
                         </div>
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>Rp {{ number_format($budget->spent, 0, ',', '.') }}</span>
-                            <span>/ Rp {{ number_format($budget->amount, 0, ',', '.') }}</span>
+                        <div class="flex justify-between text-xs text-slate-400 mt-1"
+                             x-data="{ get hidden() { return $store.finance.hidden; } }">
+                            <span>
+                                <span x-show="!hidden">Rp {{ number_format($budget->spent, 0, ',', '.') }}</span>
+                                <span x-show="hidden" class="tracking-widest">••••••</span>
+                            </span>
+                            <span>/
+                                <span x-show="!hidden">Rp {{ number_format($budget->amount, 0, ',', '.') }}</span>
+                                <span x-show="hidden" class="tracking-widest">••••••</span>
+                            </span>
                         </div>
                     </div>
                 @empty
@@ -384,8 +443,12 @@
                         <p class="text-sm font-semibold text-slate-800 truncate">{{ $bill->name }}</p>
                         <p class="text-xs text-slate-500">Tgl {{ $bill->due_day }} · {{ $bill->category }}</p>
                     </div>
-                    <div class="text-right flex-shrink-0">
-                        <p class="text-sm font-bold text-slate-800">Rp {{ number_format($bill->amount, 0, ',', '.') }}</p>
+                    <div class="text-right flex-shrink-0"
+                         x-data="{ get hidden() { return $store.finance.hidden; } }">
+                        <p class="text-sm font-bold text-slate-800">
+                            <span x-show="!hidden">Rp {{ number_format($bill->amount, 0, ',', '.') }}</span>
+                            <span x-show="hidden" class="tracking-widest text-slate-400">••••••</span>
+                        </p>
                         <p class="text-xs font-semibold {{ $dueColor }}">{{ $dueLabel }}</p>
                     </div>
                 </div>
@@ -397,6 +460,17 @@
 </div>
 
 @push('scripts')
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.store('finance', {
+        hidden: localStorage.getItem('financeHideBalance') === 'true',
+        toggle() {
+            this.hidden = !this.hidden;
+            localStorage.setItem('financeHideBalance', this.hidden);
+        }
+    });
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     initDashboardCharts();
