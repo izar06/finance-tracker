@@ -26,6 +26,25 @@ class Budgets extends Component
     public string $amount   = '';
     public string $notes    = '';
 
+    // ── BARU: Inline category creation ───────────────────────────────────
+    public bool   $showNewCategory    = false;
+    public string $newCategoryName    = '';
+    public string $newCategoryIcon    = '🏷️';
+    public bool   $showIconPicker     = false;
+
+    public array $iconOptions = [
+        '🏷️','💰','💵','💳','🏦','📊','📈','📉',
+        '💼','💻','🏢','🎁','🎀','🤝','📝',
+        '🍽️','🍔','🍜','☕','🛒','🥗','🍕',
+        '🚗','🚌','✈️','⛽','🚂','🛵','🚕',
+        '🛍️','👔','👗','👠','🎽','💄','🧴',
+        '🏠','⚡','💧','📱','🌐','🔧','🪴',
+        '🏥','💊','🏋️','🧘','🦷','👓','🩺',
+        '📚','✏️','🎓','📐','🔬','🖥️','📖',
+        '🎮','🎬','🎵','🎨','📸','🎭','🎲',
+        '🐷','🎯','⭐','🔑','🧾','📦','🗂️',
+    ];
+
     // Copy modal
     public int    $copyFromMonth;
     public int    $copyFromYear;
@@ -137,8 +156,6 @@ class Budgets extends Component
         return $years;
     }
 
-    // ── Computed: label bulan sumber copy ────────────────────────────────
-
     public function getCopySourceLabelProperty(): string
     {
         return Carbon::create($this->copyFromYear, $this->copyFromMonth)->translatedFormat('F Y');
@@ -232,18 +249,72 @@ class Budgets extends Component
 
     private function resetForm(): void
     {
-        $this->editingId = null;
-        $this->category  = '';
-        $this->amount    = '';
-        $this->notes     = '';
+        $this->editingId          = null;
+        $this->category           = '';
+        $this->amount             = '';
+        $this->notes              = '';
+        $this->showNewCategory    = false;
+        $this->newCategoryName    = '';
+        $this->newCategoryIcon    = '🏷️';
+        $this->showIconPicker     = false;
         $this->resetValidation();
+    }
+
+    // ── BARU: Inline category creation ───────────────────────────────────
+
+    public function toggleNewCategory(): void
+    {
+        $this->showNewCategory = !$this->showNewCategory;
+        $this->newCategoryName = '';
+        $this->newCategoryIcon = '🏷️';
+        $this->showIconPicker  = false;
+        $this->resetValidation('newCategoryName');
+    }
+
+    public function selectIcon(string $icon): void
+    {
+        $this->newCategoryIcon = $icon;
+        $this->showIconPicker  = false;
+    }
+
+    public function createAndSelectCategory(): void
+    {
+        $this->validate([
+            'newCategoryName' => [
+                'required',
+                'string',
+                'max:50',
+                \Illuminate\Validation\Rule::unique('categories', 'name')
+                    ->where('user_id', auth()->id())
+                    ->where('type', 'expense'),
+            ],
+        ], [
+            'newCategoryName.required' => 'Nama kategori tidak boleh kosong.',
+            'newCategoryName.unique'   => 'Kategori dengan nama ini sudah ada.',
+            'newCategoryName.max'      => 'Nama kategori maksimal 50 karakter.',
+        ]);
+
+        $cat = Category::create([
+            'name'       => trim($this->newCategoryName),
+            'icon'       => $this->newCategoryIcon,
+            'type'       => 'expense',
+            'is_default' => false,
+        ]);
+
+        // Langsung pilih kategori yang baru dibuat
+        $this->category        = $cat->name;
+        $this->showNewCategory = false;
+        $this->newCategoryName = '';
+        $this->newCategoryIcon = '🏷️';
+        $this->showIconPicker  = false;
+
+        $this->dispatch('notify', message: "Kategori \"{$cat->name}\" berhasil dibuat dan dipilih.", type: 'success');
     }
 
     // ── Salin Anggaran ────────────────────────────────────────────────────
 
     public function openCopyModal(): void
     {
-        // Default: salin dari bulan sebelum bulan yang sedang dilihat
         $prev = Carbon::create($this->year, $this->month)->subMonth();
         $this->copyFromMonth = $prev->month;
         $this->copyFromYear  = $prev->year;
@@ -252,7 +323,6 @@ class Budgets extends Component
         $this->showCopyModal = true;
     }
 
-    // Dipanggil setiap kali bulan/tahun sumber berubah
     public function updatedCopyFromMonth(): void { $this->loadCopyPreview(); }
     public function updatedCopyFromYear(): void  { $this->loadCopyPreview(); }
     public function updatedCopyOverwrite(): void { $this->loadCopyPreview(); }
@@ -295,9 +365,9 @@ class Budgets extends Component
             return;
         }
 
-        $copied   = 0;
-        $skipped  = 0;
-        $updated  = 0;
+        $copied  = 0;
+        $skipped = 0;
+        $updated = 0;
 
         foreach ($source as $budget) {
             $existing = Budget::where('month', $this->month)

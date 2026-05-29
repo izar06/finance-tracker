@@ -67,9 +67,14 @@ class Budget extends Model
         return min(100, round(($this->spent / (float) $this->amount) * 100, 1));
     }
 
+    public function getIsDepletedAttribute(): bool
+    {
+        return $this->percentage >= 100;
+    }
+
     public function getIsOverBudgetAttribute(): bool
     {
-        return $this->spent > (float) $this->amount;
+        return $this->spent > (float) $this->amount; // tetap > saja
     }
 
     public function getOverspentAttribute(): float
@@ -88,6 +93,6 @@ class Budget extends Model
 
     public function getFormattedAmountAttribute(): string
     {
-        return 'Rp ' . number_format($this->amount, 0, ',', '.');
+        return 'Rp ' . number_format((float) ($this->amount ?? 0), 0, ',', '.');
     }
 }

@@ -42,12 +42,12 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
         <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
             <p class="text-xs sm:text-sm text-slate-500 mb-1">Total Anggaran</p>
-            <p class="text-sm sm:text-xl font-bold text-slate-800 leading-tight">Rp {{ number_format($s['totalBudget'], 0, ',', '.') }}</p>
+            <p class="text-sm sm:text-xl font-bold text-slate-800 leading-tight">Rp {{ number_format((float) $s['totalBudget'], 0, ',', '.') }}</p>
             <p class="text-xs text-slate-400 mt-0.5">{{ $this->budgets->count() }} kategori</p>
         </div>
         <div class="bg-white rounded-2xl p-3 sm:p-5 border border-slate-100 shadow-sm">
             <p class="text-xs sm:text-sm text-slate-500 mb-1">Terpakai</p>
-            <p class="text-sm sm:text-xl font-bold text-slate-800 leading-tight">Rp {{ number_format($s['totalSpent'], 0, ',', '.') }}</p>
+            <p class="text-sm sm:text-xl font-bold text-slate-800 leading-tight">Rp {{ number_format((float) $s['totalSpent'], 0, ',', '.') }}</p>
             @if($s['totalBudget'] > 0)
                 <p class="text-xs text-slate-400 mt-0.5">{{ round(($s['totalSpent'] / $s['totalBudget']) * 100) }}% dari anggaran</p>
             @else
@@ -58,7 +58,7 @@
             <p class="text-xs sm:text-sm text-slate-500 mb-1">Sisa</p>
             @php $sisa = $s['totalBudget'] - $s['totalSpent']; @endphp
             <p class="text-sm sm:text-xl font-bold leading-tight {{ $sisa >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
-                Rp {{ number_format(abs($sisa), 0, ',', '.') }}
+                Rp {{ number_format(abs((float) $sisa), 0, ',', '.') }}
             </p>
             <p class="text-xs mt-0.5 {{ $sisa >= 0 ? 'text-emerald-500' : 'text-rose-500' }}">
                 {{ $sisa >= 0 ? 'masih tersedia' : 'melebihi anggaran' }}
@@ -96,6 +96,8 @@
                                 <h3 class="font-semibold text-slate-800 text-sm sm:text-base">{{ $budget->category }}</h3>
                                 @if($budget->is_over_budget)
                                     <span class="text-xs font-semibold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">Melebihi!</span>
+                                @elseif($pct >= 100)
+                                    <span class="text-xs font-semibold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-full">Habis</span>
                                 @elseif($pct >= 80)
                                     <span class="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Hampir habis</span>
                                 @endif
@@ -117,17 +119,17 @@
                         </div>
                     </div>
                     <div class="flex items-center justify-between gap-2 text-xs sm:text-sm">
-                        <span class="text-slate-500">Terpakai: <span class="{{ $textColor }} font-semibold">Rp {{ number_format($budget->spent, 0, ',', '.') }}</span></span>
+                        <span class="text-slate-500">Terpakai: <span class="{{ $textColor }} font-semibold">Rp {{ number_format((float) $budget->spent, 0, ',', '.') }}</span></span>
                         <div class="flex items-center gap-3 text-right">
                             @if($budget->is_over_budget)
-                                <span class="text-rose-500">Lebih Rp {{ number_format($budget->overspent, 0, ',', '.') }}</span>
+                                <span class="text-rose-500">Lebih Rp {{ number_format((float) $budget->overspent, 0, ',', '.') }}</span>
                             @else
-                                <span class="text-slate-400">Sisa Rp {{ number_format($budget->remaining, 0, ',', '.') }}</span>
+                                <span class="text-slate-400">Sisa Rp {{ number_format((float) $budget->remaining, 0, ',', '.') }}</span>
                             @endif
                             <span class="{{ $textColor }} font-bold">{{ $pct }}%</span>
                         </div>
                     </div>
-                    <div class="mt-1 text-xs text-slate-400">Anggaran: Rp {{ number_format($budget->amount, 0, ',', '.') }}</div>
+                    <div class="mt-1 text-xs text-slate-400">Anggaran: Rp {{ number_format((float) $budget->amount, 0, ',', '.') }}</div>
                 </div>
             @endforeach
         </div>
@@ -167,7 +169,7 @@
                             <span class="text-xs text-slate-400 ml-2">{{ $ue->count }} transaksi</span>
                         </div>
                         <div class="flex items-center gap-3">
-                            <span class="text-sm font-bold text-rose-600">Rp {{ number_format($ue->total, 0, ',', '.') }}</span>
+                            <span class="text-sm font-bold text-rose-600">Rp {{ number_format((float) $ue->total, 0, ',', '.') }}</span>
                             <button wire:click="openFormWithCategory('{{ $ue->category }}')"
                                     class="text-xs text-primary-500 hover:text-primary-700 font-medium whitespace-nowrap">+ Anggarkan</button>
                         </div>
@@ -302,7 +304,9 @@
         </div>
     @endif
 
-    {{-- Form Modal --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
+    {{-- MODAL: FORM TAMBAH / EDIT ANGGARAN --}}
+    {{-- ═══════════════════════════════════════════════════════ --}}
     @if($showForm)
         <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
              x-data x-on:keydown.escape.window="$wire.closeForm()">
@@ -312,28 +316,112 @@
                     <h3 class="font-bold text-slate-800 text-lg">{{ $editingId ? 'Edit Anggaran' : 'Tambah Anggaran' }}</h3>
                     <button wire:click="closeForm" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
                 </div>
+
                 <div class="space-y-4">
                     <div class="bg-primary-50 rounded-xl px-4 py-2.5 text-sm text-primary-700 font-medium">
                         📅 Periode: {{ \Carbon\Carbon::create($year, $month)->translatedFormat('F Y') }}
                     </div>
+
+                    {{-- ── Field: Kategori ── --}}
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Kategori</label>
+
                         @if($editingId)
+                            {{-- Edit mode: kategori tidak bisa diganti --}}
                             <div class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 text-slate-600">{{ $category }}</div>
                         @else
-                            <select wire:model="category"
-                                    class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400 outline-none bg-white @error('category') border-rose-400 @enderror">
-                                <option value="">-- Pilih Kategori --</option>
-                                @foreach(\App\Models\Category::expense()->whereNotIn('name', \App\Models\Budget::where('month', $month)->where('year', $year)->when($editingId, fn($q) => $q->where('id', '!=', $editingId))->pluck('category')->toArray())->orderBy('name')->get() as $cat)
-                                    <option value="{{ $cat->name }}">{{ $cat->icon }} {{ $cat->name }}</option>
-                                @endforeach
-                            </select>
-                        @endif
-                        @error('category') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
-                        @if(!$editingId && count($this->availableCategories) === 0)
-                            <p class="text-xs text-amber-500 mt-1">Semua kategori sudah memiliki anggaran bulan ini.</p>
+                            {{-- Tambah mode: pilih atau buat kategori baru --}}
+                            @if(!$showNewCategory)
+                                {{-- Dropdown kategori yang sudah ada --}}
+                                <select wire:model="category"
+                                        class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400 outline-none bg-white @error('category') border-rose-400 @enderror">
+                                    <option value="">-- Pilih Kategori --</option>
+                                    @foreach(\App\Models\Category::expense()->whereNotIn('name', \App\Models\Budget::where('month', $month)->where('year', $year)->pluck('category')->toArray())->orderBy('name')->get() as $cat)
+                                        <option value="{{ $cat->name }}">{{ $cat->icon }} {{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+
+                                {{-- Tombol buat kategori baru --}}
+                                <button wire:click="toggleNewCategory" type="button"
+                                        class="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-800 transition-colors">
+                                    <span class="text-base leading-none">＋</span> Buat kategori baru
+                                </button>
+
+                                @error('category')
+                                    <p class="text-xs text-rose-500 mt-1">{{ $message }}</p>
+                                @enderror
+
+                                @if(count($this->availableCategories) === 0)
+                                    <p class="text-xs text-amber-500 mt-1">Semua kategori sudah memiliki anggaran bulan ini.</p>
+                                @endif
+
+                            @else
+                                {{-- ── Form inline buat kategori baru ── --}}
+                                <div class="border border-primary-200 bg-primary-50/50 rounded-xl p-3.5 space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-xs font-semibold text-primary-700">Kategori baru</p>
+                                        <button wire:click="toggleNewCategory" type="button"
+                                                class="text-xs text-slate-400 hover:text-slate-600 transition-colors">
+                                            ✕ Batal
+                                        </button>
+                                    </div>
+
+                                    {{-- Ikon + Nama dalam satu baris --}}
+                                    <div class="flex gap-2">
+                                        {{-- Tombol pilih ikon --}}
+                                        <button wire:click="$toggle('showIconPicker')" type="button"
+                                                class="flex-shrink-0 w-11 h-11 flex items-center justify-center text-xl bg-white border border-slate-200 rounded-xl hover:border-primary-300 transition-colors">
+                                            {{ $newCategoryIcon }}
+                                        </button>
+
+                                        {{-- Input nama --}}
+                                        <div class="flex-1">
+                                            <input type="text"
+                                                   wire:model="newCategoryName"
+                                                   placeholder="Nama kategori..."
+                                                   maxlength="50"
+                                                   class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400 outline-none bg-white @error('newCategoryName') border-rose-400 @enderror">
+                                            @error('newCategoryName')
+                                                <p class="text-xs text-rose-500 mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    {{-- Icon Picker --}}
+                                    @if($showIconPicker)
+                                        <div class="bg-white border border-slate-200 rounded-xl p-2.5">
+                                            <div class="flex flex-wrap gap-1.5">
+                                                @foreach($iconOptions as $ico)
+                                                    <button wire:click="selectIcon('{{ $ico }}')" type="button"
+                                                            class="w-9 h-9 flex items-center justify-center text-lg rounded-lg hover:bg-slate-100 transition-colors {{ $newCategoryIcon === $ico ? 'bg-primary-100 ring-1 ring-primary-400' : '' }}">
+                                                        {{ $ico }}
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    {{-- Tombol simpan kategori baru --}}
+                                    <button wire:click="createAndSelectCategory"
+                                            wire:loading.attr="disabled"
+                                            wire:target="createAndSelectCategory"
+                                            type="button"
+                                            class="w-full py-2 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-60">
+                                        <span wire:loading.remove wire:target="createAndSelectCategory">Buat & Pilih Kategori</span>
+                                        <span wire:loading wire:target="createAndSelectCategory">Menyimpan...</span>
+                                    </button>
+                                </div>
+
+                                {{-- Atau kembali ke pilih kategori --}}
+                                <button wire:click="toggleNewCategory" type="button"
+                                        class="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors">
+                                    ← Pilih dari kategori yang ada
+                                </button>
+                            @endif
                         @endif
                     </div>
+
+                    {{-- ── Field: Batas Anggaran ── --}}
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Batas Anggaran</label>
                         <div class="relative">
@@ -344,12 +432,15 @@
                         </div>
                         @error('amount') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                     </div>
+
+                    {{-- ── Field: Catatan ── --}}
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Catatan <span class="text-slate-400 font-normal">(opsional)</span></label>
                         <textarea wire:model="notes" rows="2" placeholder="Contoh: termasuk makan siang kantor"
                                   class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400 outline-none resize-none"></textarea>
                     </div>
                 </div>
+
                 <div class="flex gap-3 mt-6">
                     <button wire:click="closeForm"
                             class="flex-1 px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Batal</button>
