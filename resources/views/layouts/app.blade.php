@@ -774,19 +774,37 @@
         bindCurrencyInputs();
     }
 
+    // Versi rebind yang menunggu DOM + Livewire selesai mengisi hidden.value
+    // sebelum membaca nilainya untuk ditampilkan di display input.
+    // Tanpa ini, saat edit, hidden.value masih '' saat bindCurrencyInputs() jalan
+    // sehingga display input tampil kosong / 0.
+    function rebindCurrencyInputsAfterRender() {
+        // rAF pertama: tunggu browser paint setelah Livewire morph
+        requestAnimationFrame(function() {
+            // rAF kedua: tunggu satu frame lagi agar wire:model sudah sync ke hidden input
+            requestAnimationFrame(function() {
+                document.querySelectorAll('input[data-currency]').forEach(function(el) {
+                    delete el._currencyBound;
+                });
+                bindCurrencyInputs();
+            });
+        });
+    }
+
     // Bind saat halaman pertama kali load
     document.addEventListener('DOMContentLoaded', bindCurrencyInputs);
 
     // Bind ulang setelah navigasi Livewire (SPA-style)
     document.addEventListener('livewire:navigated', rebindCurrencyInputs);
 
-    // Bind ulang setelah setiap Livewire re-render (modal buka/tutup, dsb)
-    // Gunakan livewire:morph-updated (Livewire v3) dan livewire:update sebagai fallback
-    document.addEventListener('livewire:morph-updated', function() { setTimeout(rebindCurrencyInputs, 20); });
-    document.addEventListener('livewire:update',        function() { setTimeout(rebindCurrencyInputs, 20); });
+    // Bind ulang setelah setiap Livewire re-render — pakai versi delayed
+    // agar hidden.value sudah terisi oleh Livewire sebelum kita baca
+    document.addEventListener('livewire:morph-updated', rebindCurrencyInputsAfterRender);
+    document.addEventListener('livewire:update',        function() { setTimeout(rebindCurrencyInputsAfterRender, 20); });
 
-    // Bind ulang saat custom event di-dispatch (mis. dari komponen Livewire)
-    document.addEventListener('currency:rebind', rebindCurrencyInputs);
+    // currency:rebind di-dispatch manual dari komponen (openForm, editTransaction, dll)
+    // Gunakan versi delayed juga agar nilai edit sudah masuk ke hidden input
+    document.addEventListener('currency:rebind', rebindCurrencyInputsAfterRender);
     </script>
 
     @stack('scripts')

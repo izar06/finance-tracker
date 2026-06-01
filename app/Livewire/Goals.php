@@ -36,6 +36,7 @@ class Goals extends Component
 
     // Savings deposit
     public string $savingAmount = '';
+    public bool   $autoCreateSavingTransaction = true;
 
     protected function rules(): array
     {
@@ -112,6 +113,7 @@ class Goals extends Component
     {
         $this->savingGoalId = $id;
         $this->savingAmount = '';
+        $this->autoCreateSavingTransaction = true;
         $this->showAddSavingModal = true;
         $this->dispatch('currency:rebind');
     }
@@ -131,21 +133,26 @@ class Goals extends Component
         $newAmount = $goal->current_amount + $amount;
         $goal->update(['current_amount' => $newAmount]);
 
-        // Otomatis catat sebagai transaksi pengeluaran
-        Transaction::create([
-            'type'     => 'expense',
-            'title'    => 'Tabungan: ' . $goal->name,
-            'amount'   => $amount,
-            'category' => 'Tabungan',
-            'date'     => now()->format('Y-m-d'),
-            'notes'    => 'Setoran tujuan keuangan: ' . $goal->name,
-        ]);
+        // Catat sebagai transaksi hanya jika toggle aktif
+        if ($this->autoCreateSavingTransaction) {
+            Transaction::create([
+                'type'     => 'expense',
+                'title'    => 'Tabungan: ' . $goal->name,
+                'amount'   => $amount,
+                'category' => 'Tabungan',
+                'date'     => now()->format('Y-m-d'),
+                'notes'    => 'Setoran tujuan keuangan: ' . $goal->name,
+            ]);
+        }
 
         if ($newAmount >= $goal->target_amount) {
             $goal->update(['status' => 'completed']);
             $this->dispatch('notify', message: '🎉 Selamat! Tujuan keuangan tercapai!', type: 'success');
         } else {
-            $this->dispatch('notify', message: 'Tabungan berhasil ditambahkan & dicatat sebagai transaksi.', type: 'success');
+            $msg = $this->autoCreateSavingTransaction
+                ? 'Tabungan berhasil ditambahkan & dicatat sebagai transaksi.'
+                : 'Tabungan berhasil ditambahkan (tidak dicatat sebagai transaksi).';
+            $this->dispatch('notify', message: $msg, type: 'success');
         }
 
         $this->showAddSavingModal = false;

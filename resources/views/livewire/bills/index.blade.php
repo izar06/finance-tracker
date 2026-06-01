@@ -4,7 +4,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
             <h2 class="text-xl font-bold text-slate-800">Tagihan</h2>
-            <p class="text-sm text-slate-500">Kelola tagihan rutin & jatuh tempo</p>
+            <p class="text-sm text-slate-500">Pantau tagihan rutin agar tidak ada yang terlewat atau terlambat bayar.</p>
         </div>
         <button wire:click="openForm"
                 class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-md shadow-primary-500/25 whitespace-nowrap self-start sm:self-auto">
@@ -376,17 +376,32 @@
                     </div>
 
                     {{-- Auto-create transaction toggle --}}
-                    <div class="flex items-center justify-between p-3 bg-primary-50 rounded-xl border border-primary-100">
-                        <div>
-                            <p class="text-sm font-medium text-primary-800">Catat sebagai transaksi</p>
-                            <p class="text-xs text-primary-600">Otomatis buat pengeluaran di halaman Transaksi</p>
+                    <div class="p-3 bg-primary-50 rounded-xl border border-primary-100 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-primary-800">Catat sebagai transaksi</p>
+                                <p class="text-xs text-primary-600">Buat pengeluaran di halaman Transaksi</p>
+                            </div>
+                            <button type="button" wire:click="$toggle('autoCreateTransaction')"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0
+                                           {{ $autoCreateTransaction ? 'bg-primary-500' : 'bg-slate-300' }}">
+                                <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform
+                                             {{ $autoCreateTransaction ? 'translate-x-6' : 'translate-x-1' }}"></span>
+                            </button>
                         </div>
-                        <button type="button" wire:click="$toggle('autoCreateTransaction')"
-                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0
-                                       {{ $autoCreateTransaction ? 'bg-primary-500' : 'bg-slate-300' }}">
-                            <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform
-                                         {{ $autoCreateTransaction ? 'translate-x-6' : 'translate-x-1' }}"></span>
-                        </button>
+                        {{-- #2-FIX: Penjelasan desain agar tidak bingung double-entry --}}
+                        @if($autoCreateTransaction)
+                            <p class="text-xs text-primary-700">
+                                ℹ️ <strong>Desain yang disengaja:</strong> Tagihan mencatat <em>jadwal</em>, Transaksi mencatat <em>uang keluar nyata</em>.
+                                Keduanya saling melengkapi untuk laporan yang akurat.
+                            </p>
+                        @else
+                            {{-- #5: Hint khusus cicilan paylater --}}
+                            <div class="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                                <span class="flex-shrink-0">🛒</span>
+                                <span>Cocok untuk <strong>cicilan Paylater/BNPL</strong> yang sudah tercatat di aplikasi lain, sehingga tidak dobel pengeluaran.</span>
+                            </div>
+                        @endif
                     </div>
 
                     <div>

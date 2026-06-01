@@ -1,30 +1,86 @@
 <div>
     {{-- Header --}}
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-xl font-bold text-slate-800">Laporan Keuangan</h2>
-            <p class="text-sm text-slate-500">Ringkasan & analisis keuangan tahunan</p>
+    <div class="flex flex-col gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">Laporan Keuangan</h2>
+                <p class="text-sm text-slate-500">Ringkasan & analisis keuangan — filter per tahun, bulan, atau rentang.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button wire:click="exportExcel"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                    <span>📊</span>
+                    <span wire:loading.remove wire:target="exportExcel">Excel</span>
+                    <span wire:loading wire:target="exportExcel">...</span>
+                </button>
+                <button id="btn-export-pdf"
+                        onclick="captureChartsAndExportPdf()"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
+                    <span>📄</span>
+                    <span id="btn-pdf-label">PDF</span>
+                </button>
+            </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-            <select wire:model.live="year"
-                    class="px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white font-medium">
-                @foreach($this->availableYears as $y)
-                    <option value="{{ $y }}">{{ $y }}</option>
-                @endforeach
-            </select>
-            <button wire:click="exportExcel"
-                    wire:loading.attr="disabled"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <span>📊</span>
-                <span wire:loading.remove wire:target="exportExcel">Excel</span>
-                <span wire:loading wire:target="exportExcel">...</span>
-            </button>
-            <button id="btn-export-pdf"
-                    onclick="captureChartsAndExportPdf()"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
-                <span>📄</span>
-                <span id="btn-pdf-label">PDF</span>
-            </button>
+
+        {{-- #4-FIX: Filter bar — tahun + mode --}}
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div class="flex flex-wrap items-center gap-3">
+                {{-- Tahun --}}
+                <select wire:model.live="year"
+                        class="px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white font-medium">
+                    @foreach($this->availableYears as $y)
+                        <option value="{{ $y }}">{{ $y }}</option>
+                    @endforeach
+                </select>
+
+                {{-- Mode tabs --}}
+                <div class="flex rounded-xl border border-slate-200 overflow-hidden text-sm font-medium">
+                    <button wire:click="$set('rangeMode','year')"
+                            class="px-3 py-2 transition-colors {{ $rangeMode==='year' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50' }}">
+                        Tahunan
+                    </button>
+                    <button wire:click="$set('rangeMode','month')"
+                            class="px-3 py-2 border-l border-slate-200 transition-colors {{ $rangeMode==='month' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50' }}">
+                        Per Bulan
+                    </button>
+                    <button wire:click="$set('rangeMode','range')"
+                            class="px-3 py-2 border-l border-slate-200 transition-colors {{ $rangeMode==='range' ? 'bg-primary-500 text-white' : 'text-slate-600 hover:bg-slate-50' }}">
+                        Rentang
+                    </button>
+                </div>
+
+                {{-- Kontrol spesifik per mode --}}
+                @if($rangeMode === 'month')
+                    <select wire:model.live="filterMonth"
+                            class="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white">
+                        @foreach(range(1, 12) as $m)
+                            <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}</option>
+                        @endforeach
+                    </select>
+                @elseif($rangeMode === 'range')
+                    <div class="flex items-center gap-2">
+                        <select wire:model.live="monthFrom"
+                                class="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white">
+                            @foreach(range(1, 12) as $m)
+                                <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->translatedFormat('M') }}</option>
+                            @endforeach
+                        </select>
+                        <span class="text-slate-400 text-sm">—</span>
+                        <select wire:model.live="monthTo"
+                                class="px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-300 outline-none bg-white">
+                            @foreach(range(1, 12) as $m)
+                                <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->translatedFormat('M') }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                {{-- Label rentang aktif --}}
+                <span class="ml-auto text-xs font-semibold text-primary-600 bg-primary-50 border border-primary-200 px-3 py-1.5 rounded-lg">
+                    📅 {{ $this->rangeLabel }}
+                </span>
+            </div>
         </div>
     </div>
 

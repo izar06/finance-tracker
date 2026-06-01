@@ -14,11 +14,49 @@ use Maatwebsite\Excel\Facades\Excel;
 class Reports extends Component
 {
     public string $year;
-    public string $reportType = 'monthly'; // monthly | category | comparison
+    public string $reportType  = 'monthly'; // monthly | category | comparison
+    public string $filterMonth = '';        // '' = semua bulan, '1'-'12' = bulan spesifik
+    public string $monthFrom   = '';        // rentang: dari bulan
+    public string $monthTo     = '';        // rentang: sampai bulan
+    public string $rangeMode   = 'year';    // year | month | range
 
     public function mount(): void
     {
-        $this->year = (string) now()->year;
+        $this->year      = (string) now()->year;
+        $this->monthFrom = '1';
+        $this->monthTo   = '12';
+    }
+
+    // Reset pagination saat filter berubah
+    public function updatedRangeMode(): void { $this->filterMonth = ''; $this->monthFrom = '1'; $this->monthTo = '12'; }
+    public function updatedFilterMonth(): void {}
+    public function updatedMonthFrom(): void {}
+    public function updatedMonthTo(): void {}
+
+    // Helper: list bulan yang aktif untuk query
+    protected function activeMonths(): array
+    {
+        if ($this->rangeMode === 'month' && $this->filterMonth) {
+            return [(int)$this->filterMonth];
+        }
+        if ($this->rangeMode === 'range' && $this->monthFrom && $this->monthTo) {
+            return range((int)$this->monthFrom, (int)$this->monthTo);
+        }
+        return range(1, 12); // year mode: semua bulan
+    }
+
+    public function getRangeLabelProperty(): string
+    {
+        $months = \Carbon\Carbon::create()->locale('id');
+        if ($this->rangeMode === 'month' && $this->filterMonth) {
+            return \Carbon\Carbon::create($this->year, $this->filterMonth, 1)->translatedFormat('F Y');
+        }
+        if ($this->rangeMode === 'range' && $this->monthFrom && $this->monthTo) {
+            $from = \Carbon\Carbon::create($this->year, $this->monthFrom, 1)->translatedFormat('M');
+            $to   = \Carbon\Carbon::create($this->year, $this->monthTo,   1)->translatedFormat('M Y');
+            return "$from – $to";
+        }
+        return "Tahun {$this->year}";
     }
 
     public function getAvailableYearsProperty(): array
@@ -35,8 +73,9 @@ class Reports extends Component
 
     public function getMonthlyBreakdownProperty(): array
     {
+        $activeMonths = $this->activeMonths();
         $rows = [];
-        for ($m = 1; $m <= 12; $m++) {
+        foreach ($activeMonths as $m) {
             $income = (float) Transaction::income()
                 ->whereYear('date', $this->year)
                 ->whereMonth('date', $m)
@@ -59,8 +98,11 @@ class Reports extends Component
 
     public function getCategoryBreakdownProperty(): array
     {
+        $activeMonths = $this->activeMonths();
+
         $income = Transaction::income()
             ->whereYear('date', $this->year)
+            ->whereIn(\DB::raw('MONTH(date)'), $activeMonths)
             ->selectRaw('category, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('category')
             ->orderByDesc('total')
@@ -69,6 +111,7 @@ class Reports extends Component
 
         $expense = Transaction::expense()
             ->whereYear('date', $this->year)
+            ->whereIn(\DB::raw('MONTH(date)'), $activeMonths)
             ->selectRaw('category, SUM(amount) as total, COUNT(*) as count')
             ->groupBy('category')
             ->orderByDesc('total')
@@ -80,18 +123,28 @@ class Reports extends Component
 
     public function getYearlySummaryProperty(): array
     {
-        $income  = (float) Transaction::income()->whereYear('date', $this->year)->sum('amount');
-        $expense = (float) Transaction::expense()->whereYear('date', $this->year)->sum('amount');
+        $activeMonths = $this->activeMonths();
+
+        $income  = (float) Transaction::income()
+            ->whereYear('date', $this->year)
+            ->whereIn(\DB::raw('MONTH(date)'), $activeMonths)
+            ->sum('amount');
+        $expense = (float) Transaction::expense()
+            ->whereYear('date', $this->year)
+            ->whereIn(\DB::raw('MONTH(date)'), $activeMonths)
+            ->sum('amount');
+
+        $monthCount = count($activeMonths) ?: 1;
 
         return [
-            'income'       => $income,
-            'expense'      => $expense,
-            'balance'      => $income - $expense,
-            'savings_rate' => $income > 0 ? round((($income - $expense) / $income) * 100, 1) : 0,
-            'avg_monthly_income'  => round($income / 12),
-            'avg_monthly_expense' => round($expense / 12),
-            'total_assets'        => (float) Asset::sum('current_value'),
-            'active_goals'        => FinancialGoal::active()->count(),
+            'income'               => $income,
+            'expense'              => $expense,
+            'balance'              => $income - $expense,
+            'savings_rate'         => $income > 0 ? round((($income - $expense) / $income) * 100, 1) : 0,
+            'avg_monthly_income'   => round($income / $monthCount),
+            'avg_monthly_expense'  => round($expense / $monthCount),
+            'total_assets'         => (float) Asset::sum('current_value'),
+            'active_goals'         => FinancialGoal::active()->count(),
         ];
     }
 

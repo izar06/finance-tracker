@@ -45,14 +45,15 @@ class Transaction extends Model
     ];
 
     public static array $paymentMethods = [
-        'Tunai'         => '💵',
-        'Transfer Bank' => '🏦',
-        'Kartu Debit'   => '💳',
-        'Kartu Kredit'  => '💳',
-        'E-Wallet'      => '📱',
-        'QRIS'          => '📲',
-        'Cek/Giro'      => '📝',
-        'Lainnya'       => '🔖',
+        'Tunai'          => '💵',
+        'Transfer Bank'  => '🏦',
+        'Kartu Debit'    => '💳',
+        'Kartu Kredit'   => '💳',
+        'E-Wallet'       => '📱',
+        'QRIS'           => '📲',
+        'Paylater/BNPL'  => '🛒',
+        'Cek/Giro'       => '📝',
+        'Lainnya'        => '🔖',
     ];
 
     public static array $recurringFrequencies = [
@@ -101,7 +102,7 @@ class Transaction extends Model
 
     public function getFormattedAmountAttribute(): string
     {
-        return 'Rp ' . number_format($this->amount, 0, ',', '.');
+        return 'Rp ' . number_format((float) ($this->amount ?? 0), 0, ',', '.');
     }
 
     public function getRecurringFrequencyLabelAttribute(): string

@@ -4,7 +4,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h2 class="text-xl font-bold text-slate-800">Manajemen Aset</h2>
-            <p class="text-sm text-slate-500">Pantau nilai dan pertumbuhan aset Anda</p>
+            <p class="text-sm text-slate-500">Pantau nilai kekayaan Anda — perbarui nilai aset secara manual saat harga berubah.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <button wire:click="exportExcel"

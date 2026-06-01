@@ -4,7 +4,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h2 class="text-xl font-bold text-slate-800">Tujuan Keuangan</h2>
-            <p class="text-sm text-slate-500">Pantau progres tabungan Anda</p>
+            <p class="text-sm text-slate-500">Tetapkan target tabungan dan pantau progres Anda menuju tujuan finansial.</p>
         </div>
         <button wire:click="openForm"
                 class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-md shadow-primary-500/25">
@@ -209,7 +209,7 @@
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
                 <div class="flex items-center justify-between mb-5">
-                    <h3 class="text-lg font-bold text-slate-800">Tambah Tabungan</h3>
+                    <h3 class="text-lg font-bold text-slate-800">Setor Dana Tabungan</h3>
                     <button wire:click="$set('showAddSavingModal', false)" class="p-2 hover:bg-slate-100 rounded-xl text-slate-400">✕</button>
                 </div>
 
@@ -221,12 +221,36 @@
                     @error('savingAmount') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
+                {{-- #1-FIX: Toggle autoCreateTransaction agar transparan --}}
+                <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2 mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-emerald-800">Catat sebagai transaksi</p>
+                            <p class="text-xs text-emerald-600">Buat pengeluaran kategori "Tabungan" otomatis</p>
+                        </div>
+                        <button type="button" wire:click="$toggle('autoCreateSavingTransaction')"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0
+                                       {{ $autoCreateSavingTransaction ? 'bg-emerald-500' : 'bg-slate-300' }}">
+                            <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform
+                                         {{ $autoCreateSavingTransaction ? 'translate-x-6' : 'translate-x-1' }}"></span>
+                        </button>
+                    </div>
+                    @if($autoCreateSavingTransaction)
+                        <p class="text-xs text-emerald-600">
+                            ✅ Setoran ini <strong>akan tercatat</strong> di halaman
+                            <a href="{{ route('transactions') }}" class="underline font-semibold">Transaksi →</a>
+                        </p>
+                    @else
+                        <p class="text-xs text-slate-500">ℹ️ Setoran hanya mengupdate progres goal, tidak dicatat di Transaksi.</p>
+                    @endif
+                </div>
+
                 <div class="flex gap-3">
                     <button wire:click="$set('showAddSavingModal', false)"
                             class="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200">Batal</button>
                     <button wire:click="addSaving"
                             class="flex-1 py-2.5 text-sm font-semibold text-white bg-emerald-500 rounded-xl hover:bg-emerald-600">
-                        💰 Tambahkan
+                        💰 Setor Dana
                     </button>
                 </div>
             </div>

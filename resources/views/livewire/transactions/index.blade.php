@@ -4,7 +4,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <h2 class="text-xl font-bold text-slate-800">Daftar Transaksi</h2>
-            <p class="text-sm text-slate-500">Kelola pemasukan dan pengeluaran Anda</p>
+            <p class="text-sm text-slate-500">Catat setiap pemasukan & pengeluaran untuk memantau keuangan Anda secara akurat.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             @if(count($selectedIds) > 0)
@@ -85,14 +85,34 @@
             </select>
         </div>
 
-        {{-- Active filter badge --}}
-        @if($filterCategory)
-            <div class="mt-3 flex items-center gap-2">
-                <span class="text-xs text-slate-400">Filter aktif:</span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200 rounded-lg">
-                    🏷️ {{ $filterCategory }}
-                    <button wire:click="$set('filterCategory', '')" class="hover:text-primary-900 font-bold leading-none">✕</button>
-                </span>
+        {{-- Active filter badges — semua filter aktif ditampilkan --}}
+        @php
+            $activeFilters = array_filter([
+                'search'          => $search          ? ['label' => '🔍 "'.$search.'"',      'field' => 'search']          : null,
+                'filterType'      => $filterType      ? ['label' => ($filterType === 'income' ? '📥 Pemasukan' : '📤 Pengeluaran'), 'field' => 'filterType'] : null,
+                'filterCategory'  => $filterCategory  ? ['label' => '🏷️ '.$filterCategory,  'field' => 'filterCategory']  : null,
+                'filterPayment'   => $filterPaymentMethod ? ['label' => '💳 '.$filterPaymentMethod, 'field' => 'filterPaymentMethod'] : null,
+                'filterMonth'     => $filterMonth     ? ['label' => '📅 '.(\Carbon\Carbon::create()->month((int)$filterMonth)->translatedFormat('F')), 'field' => 'filterMonth'] : null,
+                'filterYear'      => $filterYear      ? ['label' => '📆 '.$filterYear,       'field' => 'filterYear']      : null,
+                'filterRecurring' => $filterRecurring ? ['label' => $filterRecurring === 'recurring' ? '🔁 Berulang' : '1️⃣ Sekali', 'field' => 'filterRecurring'] : null,
+            ]);
+        @endphp
+        @if(count($activeFilters) > 0)
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-400 font-medium">Filter aktif:</span>
+                @foreach($activeFilters as $filter)
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200 rounded-lg">
+                        {{ $filter['label'] }}
+                        <button wire:click="$set('{{ $filter['field'] }}', '')" class="hover:text-primary-900 font-bold leading-none">✕</button>
+                    </span>
+                @endforeach
+                @if(count($activeFilters) > 1)
+                    <button wire:click="$dispatch('resetAllFilters')"
+                            onclick="['search','filterType','filterCategory','filterPaymentMethod','filterMonth','filterYear','filterRecurring'].forEach(f => @this.set(f,''))"
+                            class="text-xs text-slate-400 hover:text-rose-500 underline ml-1">
+                        Hapus semua
+                    </button>
+                @endif
             </div>
         @endif
     </div>
@@ -359,7 +379,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1.5">Kategori</label>
-                        <select wire:model="category"
+                        <select wire:model.live="category"
                                 class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-300 focus:border-primary-400 outline-none bg-white @error('category') border-rose-400 @enderror">
                             <option value="">-- Pilih Kategori --</option>
                             @foreach(\App\Models\Category::where('type', $type)->orderBy('name')->get() as $cat)
@@ -367,6 +387,31 @@
                             @endforeach
                         </select>
                         @error('category') <p class="text-xs text-rose-500 mt-1">{{ $message }}</p> @enderror
+
+                        {{-- #2: Contextual hint saat Tabungan dipilih --}}
+                        @if($category === 'Tabungan')
+                            <div class="mt-2 flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700">
+                                <span class="text-base leading-none flex-shrink-0">💡</span>
+                                <span>
+                                    Kamu memilih kategori <strong>Tabungan</strong>. Ingin tabungan ini dihubungkan ke tujuan keuangan tertentu?
+                                    <a href="{{ route('goals') }}" class="underline font-semibold hover:text-emerald-900">Kelola Tujuan Keuangan →</a>
+                                </span>
+                            </div>
+                        @endif
+
+                        {{-- #4: Smart hint saat Tagihan & Utilitas dipilih --}}
+                        @if($category === 'Tagihan & Utilitas')
+                            @php $activeBillsCount = \App\Models\Bill::where('user_id', auth()->id())->where('status', 'active')->count(); @endphp
+                            @if($activeBillsCount > 0)
+                                <div class="mt-2 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                                    <span class="text-base leading-none flex-shrink-0">🔔</span>
+                                    <span>
+                                        Kamu punya <strong>{{ $activeBillsCount }} tagihan aktif</strong>. Mau bayar langsung dari sana agar tercatat otomatis?
+                                        <a href="{{ route('bills') }}" class="underline font-semibold hover:text-blue-900">Lihat Tagihan →</a>
+                                    </span>
+                                </div>
+                            @endif
+                        @endif
                     </div>
 
                     <div>
@@ -405,6 +450,15 @@
                             </span>
                             <span class="text-slate-400 transition-transform {{ $is_recurring ? 'rotate-180' : '' }}">▼</span>
                         </button>
+
+                        {{-- #5-FIX: Penjelasan kapan pakai Recurring vs Tagihan --}}
+                        @if(!$is_recurring)
+                            <div class="px-4 py-2.5 bg-slate-50/80 border-t border-slate-100 text-xs text-slate-400 leading-relaxed">
+                                💡 <strong class="text-slate-500">Gunakan ini</strong> untuk pemasukan/pengeluaran yang <em>nominalnya bisa berbeda tiap kali</em> (misal gaji variabel, belanja).
+                                Untuk tagihan rutin tetap (Netflix, listrik), lebih tepat pakai
+                                <a href="{{ route('bills') }}" class="underline text-slate-500 hover:text-primary-600">Tagihan →</a>
+                            </div>
+                        @endif
 
                         @if($is_recurring)
                             <div class="p-4 space-y-3 border-t border-slate-100 bg-violet-50/30">
